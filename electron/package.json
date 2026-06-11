@@ -1,0 +1,16 @@
+{
+  "name": "travel-guide-electron",
+  "version": "1.0.0",
+  "description": "旅游指南共享平台桌面应用",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron ."
+  },
+  "keywords": ["travel", "guide", "electron", "vue"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.0.0"
+  }
+}
