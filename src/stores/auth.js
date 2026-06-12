@@ -17,6 +17,7 @@ export const useAuthStore = defineStore('auth', {
 
   actions: {
     async login(credentials) {
+      this.logout()
       const res = await authAPI.login(credentials)
       if (res.code === 200) {
         this.token = res.data.token
@@ -31,6 +32,7 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async userLogin(credentials) {
+      this.logout()
       const res = await userAPI.login(credentials)
       if (res.code === 200) {
         this.token = res.data.token

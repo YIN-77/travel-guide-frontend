@@ -313,7 +313,7 @@
                 <div class="activity-form-row">
                   <el-form-item label="天数">
                     <el-select v-model="activity.dayNumber" style="width: 100%">
-                      <el-option v-for="day in createForm.daysCount" :key="day" :label="`第${day}天`" :value="day" />
+                      <el-option v-for="d in dayRange" :key="d" :label="`第${d}天`" :value="d" />
                     </el-select>
                   </el-form-item>
                   <el-form-item label="时间">
@@ -365,7 +365,12 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
+
+const dayRange = computed(() => {
+  const count = createForm.daysCount || 1
+  return Array.from({ length: count }, (_, i) => i + 1)
+})
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { adminItineraryAPI } from '../../api/adminItinerary'
 
