@@ -889,7 +889,7 @@ onUnmounted(() => {
 .itinerary-card {
   background: white;
   border-radius: 16px;
-  padding: 24px;
+  padding: 16px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   cursor: pointer;
   transition: all 0.3s ease;
@@ -904,7 +904,7 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .title-wrap {
@@ -915,7 +915,7 @@ onUnmounted(() => {
 }
 
 .card-title {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   color: #111;
   margin: 0;
@@ -962,10 +962,10 @@ onUnmounted(() => {
 
 .card-cover-small {
   width: 100%;
-  height: 120px;
+  height: 80px;
   border-radius: 8px;
   overflow: hidden;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .card-cover-small img {
@@ -977,8 +977,14 @@ onUnmounted(() => {
 .card-desc {
   font-size: 14px;
   color: #666;
-  margin: 0 0 16px 0;
-  line-height: 1.6;
+  margin: 0 0 8px 0;
+  line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  max-height: 42px;
 }
 
 .card-meta {
