@@ -44,5 +44,10 @@ export const adminItineraryAPI = {
   // 设置官方行程
   updateOfficial: (id, isOfficial) => {
     return api.put(`/admin/itineraries/${id}/official`, { isOfficial })
+  },
+
+  // 更新官方行程
+  update: (id, data) => {
+    return api.put(`/admin/itineraries/${id}`, data)
   }
 }

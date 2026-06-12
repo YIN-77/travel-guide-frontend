@@ -501,12 +501,16 @@ const closeDetailModal = () => {
 // 创建/编辑行程
 const openCreateModal = () => {
   editingItinerary.value = null
+  const today = new Date()
+  const future = new Date(today)
+  future.setDate(future.getDate() + 3)
+  const fmt = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
   itineraryForm.value = {
     title: '',
     description: '',
     coverImage: '',
-    startDate: '',
-    endDate: '',
+    startDate: fmt(today),
+    endDate: fmt(future),
     isPublic: false,
     activities: []
   }

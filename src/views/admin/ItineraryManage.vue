@@ -271,7 +271,13 @@
           />
         </el-form-item>
         <el-form-item label="行程天数" prop="daysCount">
-          <el-input-number v-model="createForm.daysCount" :min="1" :max="30" />
+          <el-input-number v-model="createForm.daysCount" :min="1" :max="30" @change="syncDaysCountToDates" />
+        </el-form-item>
+        <el-form-item label="开始日期">
+          <el-date-picker v-model="createForm.startDate" type="date" placeholder="选择开始日期" style="width: 100%" @change="updateEndDate" />
+        </el-form-item>
+        <el-form-item label="结束日期">
+          <el-date-picker v-model="createForm.endDate" type="date" placeholder="选择结束日期" style="width: 100%" @change="updateDaysCount" />
         </el-form-item>
         <el-form-item label="封面图片">
           <div class="upload-options">
@@ -394,6 +400,8 @@ const createForm = reactive({
   title: '',
   description: '',
   daysCount: 1,
+  startDate: '',
+  endDate: '',
   coverImage: '',
   isPublic: true,
   isFeatured: false,
@@ -620,6 +628,45 @@ const removeCoverImage = () => {
   createForm.coverImage = ''
 }
 
+const formatDateStr = (date) => {
+  if (!date) return ''
+  const d = new Date(date)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+const syncDaysCountToDates = () => {
+  if (createForm.startDate) {
+    const start = new Date(createForm.startDate)
+    const end = new Date(start)
+    end.setDate(end.getDate() + (createForm.daysCount - 1))
+    createForm.endDate = formatDateStr(end)
+  } else {
+    const start = new Date()
+    createForm.startDate = formatDateStr(start)
+    const end = new Date(start)
+    end.setDate(end.getDate() + (createForm.daysCount - 1))
+    createForm.endDate = formatDateStr(end)
+  }
+}
+
+const updateEndDate = () => {
+  if (createForm.startDate && createForm.daysCount) {
+    const start = new Date(createForm.startDate)
+    const end = new Date(start)
+    end.setDate(end.getDate() + (createForm.daysCount - 1))
+    createForm.endDate = formatDateStr(end)
+  }
+}
+
+const updateDaysCount = () => {
+  if (createForm.startDate && createForm.endDate) {
+    const start = new Date(createForm.startDate)
+    const end = new Date(createForm.endDate)
+    const diff = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1
+    createForm.daysCount = Math.max(1, diff)
+  }
+}
+
 // 添加活动
 const addActivity = () => {
   createForm.activities.push({
@@ -683,11 +730,14 @@ const handleCreateOfficial = () => {
   createForm.title = ''
   createForm.description = ''
   createForm.daysCount = 1
+  createForm.startDate = ''
+  createForm.endDate = ''
   createForm.coverImage = ''
   createForm.isPublic = true
   createForm.isFeatured = false
   createForm.activities = []
   createDialogVisible.value = true
+  setTimeout(() => syncDaysCountToDates(), 100)
 }
 
 // 编辑官方行程
@@ -699,6 +749,9 @@ const handleEditOfficial = async (row) => {
       createForm.title = res.data.title
       createForm.description = res.data.description || ''
       createForm.daysCount = res.data.days?.length || 1
+      const fmt = (d) => d ? new Date(d).toISOString().split('T')[0] : ''
+      createForm.startDate = fmt(res.data.startDate)
+      createForm.endDate = fmt(res.data.endDate)
       createForm.coverImage = res.data.coverImage || ''
       createForm.isPublic = res.data.isPublic
       createForm.isFeatured = res.data.isFeatured
@@ -738,9 +791,14 @@ const handleSubmitCreate = async () => {
     if (valid) {
       createLoading.value = true
       try {
-        // 按天分组活动
+        // 按天分组活动，并按时间排序
+        const sortedActivities = [...createForm.activities].sort((a, b) => {
+          if (a.dayNumber !== b.dayNumber) return a.dayNumber - b.dayNumber
+          return (a.time || '').localeCompare(b.time || '')
+        })
+        
         const daysMap = {}
-        createForm.activities.forEach(activity => {
+        sortedActivities.forEach(activity => {
           if (activity.title) {
             if (!daysMap[activity.dayNumber]) {
               daysMap[activity.dayNumber] = {
@@ -758,12 +816,16 @@ const handleSubmitCreate = async () => {
           }
         })
         
-        const days = Object.values(daysMap)
+        // 按天数排序
+        const dayNumbers = Object.keys(daysMap).map(Number).sort((a, b) => a - b)
+        const days = dayNumbers.map(num => daysMap[num])
         
         const data = {
           title: createForm.title,
           description: createForm.description,
           daysCount: createForm.daysCount,
+          startDate: createForm.startDate || null,
+          endDate: createForm.endDate || null,
           coverImage: createForm.coverImage,
           isPublic: createForm.isPublic,
           isFeatured: createForm.isFeatured,
