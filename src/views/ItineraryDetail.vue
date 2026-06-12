@@ -71,7 +71,6 @@
                 <div v-for="(activities, dayNum) in groupedActivities" :key="dayNum" class="day-section">
                   <div class="day-header">
                     <div class="day-badge">第{{ dayNum }}天</div>
-                    <div class="day-date">{{ getDayDate(dayNum) }}</div>
                   </div>
                   <div class="day-activities">
                     <div v-for="(activity, idx) in activities" :key="activity.id || idx" class="activity-item">
@@ -155,7 +154,7 @@ const formatDateRange = (startDate, endDate) => {
   return `${start.getFullYear()}年${start.getMonth() + 1}月${start.getDate()}日 - ${end.getMonth() + 1}月${end.getDate()}日`
 }
 
-// 获取天数
+// 获取作者名称
 const getDaysCount = (startDate, endDate) => {
   if (!startDate || !endDate) return 0
   const start = new Date(startDate)
@@ -163,15 +162,7 @@ const getDaysCount = (startDate, endDate) => {
   return Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1
 }
 
-// 获取某天的日期
-const getDayDate = (dayNum) => {
-  if (!itinerary.value?.startDate) return ''
-  const start = new Date(itinerary.value.startDate)
-  start.setDate(start.getDate() + dayNum - 1)
-  return `${start.getMonth() + 1}月${start.getDate()}日`
-}
-
-// 获取作者名称
+// 获取天数
 const getAuthorName = () => {
   if (!itinerary.value) return '匿名'
   if (itinerary.value.isOfficial || itinerary.value.userId === 0) return '官方平台'
@@ -423,11 +414,6 @@ onMounted(() => {
   font-size: 16px;
   font-weight: 700;
   color: #667eea;
-}
-
-.day-date {
-  font-size: 14px;
-  color: #64748b;
 }
 
 .day-activities {
