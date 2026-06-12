@@ -590,4 +590,17 @@ onMounted(() => {
     align-self: flex-start;
   }
 }
+
+@media (max-width: 768px) {
+  .itinerary-detail-page .container { margin-left: 0; }
+  .itinerary-detail-page .main-content { padding-bottom: 60px; }
+  .detail-cover { height: 200px; }
+  .itinerary-title { font-size: 22px; }
+  .itinerary-meta { flex-direction: column; gap: 8px; }
+  .activities-section { padding: 16px; }
+  .activity-item { flex-direction: column; gap: 8px; }
+  .activity-time { align-self: flex-start; }
+  .scrollable-content { padding: 10px; }
+  .itinerary-info-card { padding: 16px; }
+}
 </style>

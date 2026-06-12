@@ -70,6 +70,25 @@
         <div v-else class="auth-buttons">
           <button class="auth-btn" @click="showAuthModal = true">登录 / 注册</button>
         </div>
+        <!-- 移动端菜单按钮 -->
+        <button class="mobile-menu-btn" @click="toggleMobileMenu">
+          <span class="menu-line" :class="{ open: mobileMenuOpen }"></span>
+        </button>
+      </div>
+
+      <!-- 移动端菜单 -->
+      <div v-if="mobileMenuOpen" class="mobile-menu-overlay" @click="mobileMenuOpen = false">
+        <div class="mobile-menu" @click.stop>
+          <div
+            v-for="menu in mobileMenus"
+            :key="menu.id"
+            class="mobile-menu-item"
+            @click="navigateMobile(menu)"
+          >
+            <span class="mobile-menu-icon">{{ menu.icon }}</span>
+            <span class="mobile-menu-text">{{ menu.name }}</span>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -93,6 +112,25 @@ const searchQuery = ref('')
 const showSuggestions = ref(false)
 const searchSuggestions = ref([])
 const allDestinations = ref([])
+const mobileMenuOpen = ref(false)
+
+const mobileMenus = [
+  { id: 1, name: '首页', icon: '🏠', path: '/' },
+  { id: 2, name: '景点浏览', icon: '🗺️', path: '/destinations' },
+  { id: 3, name: '行程规划', icon: '📅', path: '/itinerary' },
+  { id: 4, name: '旅游攻略', icon: '📖', path: '/guide' },
+  { id: 5, name: '旅游资讯', icon: '📰', path: '/news' },
+  { id: 6, name: '个人中心', icon: '👤', path: '/profile' }
+]
+
+const toggleMobileMenu = () => {
+  mobileMenuOpen.value = !mobileMenuOpen.value
+}
+
+const navigateMobile = (menu) => {
+  mobileMenuOpen.value = false
+  router.push(menu.path)
+}
 
 const processAvatarUrl = (url) => {
   if (!url) return ''
@@ -507,6 +545,126 @@ onMounted(() => {
   transform: translateY(-2px);
 }
 
+/* 移动端汉堡菜单按钮 */
+.mobile-menu-btn {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  width: 36px;
+  height: 36px;
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-menu-btn .menu-line,
+.mobile-menu-btn .menu-line::before,
+.mobile-menu-btn .menu-line::after {
+  display: block;
+  width: 24px;
+  height: 2.5px;
+  background: #333;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+  position: absolute;
+  left: 6px;
+}
+
+.mobile-menu-btn .menu-line {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.mobile-menu-btn .menu-line::before {
+  content: '';
+  top: -7px;
+}
+
+.mobile-menu-btn .menu-line::after {
+  content: '';
+  top: 7px;
+}
+
+.mobile-menu-btn .menu-line.open {
+  background: transparent;
+}
+
+.mobile-menu-btn .menu-line.open::before {
+  top: 0;
+  transform: rotate(45deg);
+}
+
+.mobile-menu-btn .menu-line.open::after {
+  top: 0;
+  transform: rotate(-45deg);
+}
+
+/* 移动端菜单浮层 */
+.mobile-menu-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 200;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.mobile-menu {
+  position: absolute;
+  top: 70px;
+  right: 0;
+  background: white;
+  border-radius: 0 0 0 16px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+  padding: 8px 0;
+  min-width: 200px;
+  animation: slideIn 0.2s ease;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(20px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.mobile-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-menu-item:hover {
+  background: #f5f5f5;
+}
+
+.mobile-menu-item:active {
+  background: #eee;
+}
+
+.mobile-menu-icon {
+  font-size: 18px;
+  width: 24px;
+  text-align: center;
+}
+
+.mobile-menu-text {
+  font-size: 15px;
+  font-weight: 500;
+  color: #333;
+}
+
 @media (max-width: 768px) {
   .navbar-content {
     padding: 12px 16px;
@@ -567,6 +725,23 @@ onMounted(() => {
 
   .suggestion-location {
     font-size: 11px;
+  }
+
+  .logout-btn {
+    display: none;
+  }
+
+  .mobile-menu-btn {
+    display: block;
+  }
+
+  .mobile-menu-overlay {
+    display: block;
+  }
+
+  .navbar-right .auth-btn {
+    padding: 8px 14px;
+    font-size: 13px;
   }
 }
 

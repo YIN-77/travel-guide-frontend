@@ -355,4 +355,14 @@ onMounted(() => {
     justify-content: center;
   }
 }
+
+@media (max-width: 768px) {
+  .news-detail-page .container { margin-left: 0; }
+  .news-detail-page .main-content { padding-bottom: 60px; }
+  .news-detail-cover { height: 200px; }
+  .news-detail-title { font-size: 20px; }
+  .news-detail-meta { flex-direction: column; gap: 8px; }
+  .news-detail-content { padding: 16px; font-size: 15px; }
+  .scrollable-content { padding: 10px; }
+}
 </style>

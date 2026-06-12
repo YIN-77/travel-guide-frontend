@@ -118,6 +118,7 @@
           </section>
         </div>
       </main>
+      <MobileBottomNav />
     </div>
   </div>
 </template>
@@ -126,6 +127,7 @@
 import { ref, computed, onMounted } from 'vue'
 import Sidebar from '../components/Sidebar.vue'
 import Navbar from '../components/Navbar.vue'
+import MobileBottomNav from '../components/MobileBottomNav.vue'
 import { destinationAPI } from '../api/destinations'
 import { guideAPI } from '../api/guide'
 import { itineraryAPI } from '../api/itinerary'
@@ -704,5 +706,26 @@ onMounted(() => {
   .main-content {
     padding: 12px;
   }
+}
+
+@media (max-width: 768px) {
+  .home .container { margin-left: 0; }
+  .home .main-content { padding-bottom: 60px; }
+  .carousel-section .el-carousel { height: 200px !important; }
+  .carousel-section .el-carousel__container { height: 200px !important; }
+  .carousel-item { height: 200px !important; }
+  .carousel-content h2 { font-size: 20px; }
+  .carousel-content p { font-size: 13px; }
+  .section-header h2 { font-size: 18px; }
+  .content-grid { grid-template-columns: 1fr; }
+  .content-area { padding: 15px; }
+  .hot-destination-card { min-width: 160px; }
+  .hot-card-img { height: 100px; }
+  .hot-card-name { font-size: 14px; }
+  .search-bar { flex-direction: column; }
+  .search-input, .filter-select, .search-button { width: 100%; }
+  .destination-hero { height: 200px; }
+  .destination-title { font-size: 24px; }
+  .destination-info { padding: 20px; }
 }
 </style>

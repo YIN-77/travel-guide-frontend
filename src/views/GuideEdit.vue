@@ -107,6 +107,7 @@
           </el-card>
         </div>
       </main>
+      <MobileBottomNav />
     </div>
   </div>
 </template>
@@ -117,6 +118,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import Navbar from '../components/Navbar.vue'
 import Sidebar from '../components/Sidebar.vue'
+import MobileBottomNav from '../components/MobileBottomNav.vue'
 import { guideAPI } from '../api/guide'
 
 const router = useRouter()
@@ -495,5 +497,16 @@ onMounted(() => {
   .container {
     margin-left: 0;
   }
+}
+
+@media (max-width: 768px) {
+  .guide-edit-page .main-content { padding-bottom: 60px; }
+  .guide-edit-page .scrollable-content { padding: 10px; }
+  .page-header h1 { font-size: 20px; }
+  .form-card { padding: 16px; }
+  .el-form { width: 100%; }
+  .type-selector { flex-wrap: wrap; }
+  .cover-upload-area { height: 160px; }
+  .ql-editor { min-height: 200px; }
 }
 </style>

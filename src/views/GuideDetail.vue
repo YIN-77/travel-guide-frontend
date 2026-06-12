@@ -412,4 +412,14 @@ onMounted(() => {
     justify-content: center;
   }
 }
+
+@media (max-width: 768px) {
+  .guide-detail-page .container { margin-left: 0; }
+  .guide-detail-page .main-content { padding-bottom: 60px; }
+  .guide-detail-cover { height: 200px; }
+  .guide-detail-title { font-size: 22px; }
+  .guide-detail-content h2 { font-size: 18px; }
+  .guide-detail-content { padding: 16px; }
+  .scrollable-content { padding: 10px; }
+}
 </style>

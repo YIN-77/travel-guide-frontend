@@ -310,4 +310,46 @@ const handleRegister = async () => {
 .close-btn:hover {
   background: #e0e0e0;
 }
+
+@media (max-width: 768px) {
+  .auth-container {
+    padding: 10px;
+    align-items: center;
+  }
+
+  .auth-card {
+    width: 100%;
+    max-width: 100%;
+    padding: 24px 20px;
+    margin: 0;
+    border-radius: 12px;
+  }
+
+  .auth-card h2 {
+    font-size: 20px;
+  }
+
+  .auth-tabs .tab-btn {
+    font-size: 15px;
+    padding: 10px 24px;
+  }
+
+  .form-group input {
+    padding: 12px 14px;
+    font-size: 15px;
+  }
+
+  .submit-btn {
+    padding: 12px;
+    font-size: 15px;
+  }
+
+  .close-btn {
+    top: 12px;
+    right: 12px;
+    width: 28px;
+    height: 28px;
+    font-size: 20px;
+  }
+}
 </style>

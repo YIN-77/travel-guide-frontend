@@ -338,6 +338,7 @@
         </div>
       </div>
     </div>
+    <MobileBottomNav />
   </div>
 </template>
 
@@ -349,6 +350,7 @@ import { itineraryAPI } from '../api/itinerary'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import Navbar from '../components/Navbar.vue'
 import Sidebar from '../components/Sidebar.vue'
+import MobileBottomNav from '../components/MobileBottomNav.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -1665,43 +1667,21 @@ onUnmounted(() => {
 }
 
 @media (max-width: 768px) {
-  .itinerary-page {
-    padding-top: 70px;
-  }
-  
-  .container {
-    flex-direction: column;
-    margin-left: 0;
-  }
-
-  .main-content {
-    padding: 12px;
-  }
-
-  .page-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 16px;
-  }
-
-  .create-btn {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .itineraries-grid,
-  .content-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .form-row,
-  .activity-form-row {
-    grid-template-columns: 1fr;
-  }
-
-  .modal {
-    max-width: 100%;
-    margin: 10px;
-  }
+  .itinerary-page .container { margin-left: 0; }
+  .itinerary-page .main-content { padding-bottom: 60px; }
+  .page-header { flex-direction: column; gap: 12px; align-items: flex-start; }
+  .page-title { font-size: 22px; }
+  .create-btn { width: 100%; justify-content: center; }
+  .itineraries-grid, .content-grid { grid-template-columns: 1fr; gap: 12px; }
+  .itinerary-card { padding: 12px; }
+  .card-title { font-size: 15px; }
+  .section-title { font-size: 18px; }
+  .scrollable-content { padding: 10px; }
+  .itinerary-detail .detail-meta { flex-wrap: wrap; }
+  .modal-overlay .modal { width: 95%; max-height: 85vh; margin: 10px auto; }
+  .create-modal { width: 95% !important; }
+  .form-row { flex-direction: column; }
+  .day-section { padding: 12px; }
+  .activity-form-row { flex-direction: column; gap: 8px; }
 }
 </style>

@@ -583,6 +583,7 @@
           </div>
         </div>
       </main>
+      <MobileBottomNav />
     </div>
   </div>
 </template>
@@ -596,6 +597,7 @@ import { notificationAPI } from '../api/notifications'
 import { ElMessage } from 'element-plus'
 import Navbar from '../components/Navbar.vue'
 import Sidebar from '../components/Sidebar.vue'
+import MobileBottomNav from '../components/MobileBottomNav.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -1781,5 +1783,17 @@ onMounted(() => {
   .save-btn {
     align-self: stretch;
   }
+}
+
+@media (max-width: 768px) {
+  .profile-page .container { margin-left: 0; }
+  .profile-page .main-content { padding-bottom: 60px; }
+  .profile-header { flex-direction: column; text-align: center; padding: 20px; }
+  .profile-avatar { width: 80px; height: 80px; font-size: 32px; }
+  .profile-info h1 { font-size: 22px; }
+  .profile-stats { justify-content: center; }
+  .tabs { overflow-x: auto; gap: 0; }
+  .tab { white-space: nowrap; padding: 12px 16px; font-size: 13px; }
+  .content-area { padding: 15px; }
 }
 </style>

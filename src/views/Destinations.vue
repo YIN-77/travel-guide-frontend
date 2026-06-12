@@ -166,6 +166,7 @@
           </div>
         </div>
       </main>
+      <MobileBottomNav />
     </div>
   </div>
 </template>
@@ -175,6 +176,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import Sidebar from '../components/Sidebar.vue'
 import DestinationDetail from '../components/DestinationDetail.vue'
 import Navbar from '../components/Navbar.vue'
+import MobileBottomNav from '../components/MobileBottomNav.vue'
 import { destinationAPI } from '../api/destinations'
 import { useRoute, useRouter } from 'vue-router'
 
@@ -861,5 +863,18 @@ onUnmounted(() => {
   .pagination-info {
     font-size: 13px;
   }
+}
+
+@media (max-width: 768px) {
+  .destinations-page .container { margin-left: 0; }
+  .destinations-page .main-content { padding-bottom: 60px; }
+  .destinations-page .page-header h1 { font-size: 20px; }
+  .destinations-page .page-header { padding: 15px; }
+  .destinations-grid { grid-template-columns: 1fr; gap: 12px; }
+  .destinations-page .content-area { padding: 15px; }
+  .dest-card-img { height: 160px; }
+  .dest-card-title { font-size: 16px; }
+  .search-bar { flex-direction: column; gap: 8px; }
+  .search-input, .filter-select, .search-button { width: 100%; }
 }
 </style>

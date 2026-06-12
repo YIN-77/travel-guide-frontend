@@ -207,6 +207,7 @@
       @close="authModalVisible = false" 
       @success="handleAuthSuccess" 
     />
+    <MobileBottomNav />
   </div>
 </template>
 
@@ -215,6 +216,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import Navbar from '../components/Navbar.vue'
 import Sidebar from '../components/Sidebar.vue'
+import MobileBottomNav from '../components/MobileBottomNav.vue'
 import { guideAPI } from '../api/guide'
 import { useAuthStore } from '../stores/auth'
 import AuthModal from '../components/AuthModal.vue'
@@ -728,5 +730,14 @@ onMounted(() => {
   .container {
     margin-left: 0;
   }
+}
+
+@media (max-width: 768px) {
+  .guide-page .container { margin-left: 0; }
+  .guide-page .main-content { padding-bottom: 60px; }
+  .guide-page .page-header h1 { font-size: 20px; }
+  .guide-page .page-header { padding: 15px; flex-direction: column; gap: 12px; align-items: flex-start; }
+  .content-grid { grid-template-columns: 1fr; gap: 12px; }
+  .content-area { padding: 15px; }
 }
 </style>

@@ -50,6 +50,7 @@
           </div>
         </div>
       </main>
+      <MobileBottomNav />
     </div>
   </div>
 </template>
@@ -60,6 +61,7 @@ import { useRouter } from 'vue-router'
 import Navbar from '../components/Navbar.vue'
 import Sidebar from '../components/Sidebar.vue'
 import { newsAPI } from '../api/news'
+import MobileBottomNav from '../components/MobileBottomNav.vue'
 
 const router = useRouter()
 
@@ -319,5 +321,16 @@ onMounted(() => {
     width: 100%;
     height: 200px;
   }
+}
+
+@media (max-width: 768px) {
+  .news-page .container { margin-left: 0; }
+  .news-page .main-content { padding-bottom: 60px; }
+  .news-page .page-header h1 { font-size: 20px; }
+  .news-page .page-header { padding: 15px; }
+  .news-grid { grid-template-columns: 1fr; gap: 12px; }
+  .content-area { padding: 15px; }
+  .news-card { flex-direction: column; }
+  .news-card-img { width: 100%; height: 180px; }
 }
 </style>
