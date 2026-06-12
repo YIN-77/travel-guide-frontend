@@ -627,6 +627,8 @@ onMounted(() => {
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
   padding: 8px 0;
   min-width: 200px;
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
   animation: slideIn 0.2s ease;
 }
 
@@ -737,6 +739,25 @@ onMounted(() => {
 
   .mobile-menu-overlay {
     display: block;
+  }
+
+  .mobile-menu {
+    position: fixed;
+    top: 70px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    min-width: unset;
+    max-height: none;
+    border-radius: 0;
+    padding: 8px 0 100px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .mobile-menu-item {
+    padding: 16px 20px;
   }
 
   .navbar-right .auth-btn {
