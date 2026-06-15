@@ -668,15 +668,27 @@ onMounted(() => {
 }
 
 @media (max-width: 768px) {
+  .navbar {
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08);
+  }
+
   .navbar-content {
-    padding: 12px 16px;
-    flex-wrap: wrap;
-    gap: 12px;
+    padding: 8px 12px;
+    flex-wrap: nowrap;
+    gap: 8px;
+    min-height: 52px;
   }
 
   .navbar-left {
-    width: 100%;
-    gap: 16px;
+    width: auto;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .home-link svg {
+    width: 24px;
+    height: 24px;
   }
 
   .navbar-search {
@@ -685,40 +697,65 @@ onMounted(() => {
   }
 
   .navbar-search-input {
-    padding: 10px 70px 10px 40px;
-    font-size: 14px;
+    padding: 6px 60px 6px 34px;
+    font-size: 13px;
+    border-radius: 20px;
+    border-width: 1px;
   }
 
   .search-btn {
-    padding: 6px 16px;
-    font-size: 13px;
+    padding: 4px 12px;
+    font-size: 12px;
+    border-radius: 16px;
   }
 
   .search-icon {
-    left: 12px;
-    font-size: 14px;
+    left: 10px;
+    font-size: 12px;
   }
 
   .user-name {
     display: none;
   }
 
-  .navbar-left svg {
-    width: 28px;
-    height: 28px;
+  .itinerary-btn {
+    padding: 6px;
   }
 
   .itinerary-btn span {
     display: none;
   }
 
+  .itinerary-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .notification-btn {
+    padding: 6px;
+  }
+
+  .notification-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .user-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+
   .search-suggestions {
-    max-height: 300px;
+    max-height: 280px;
+    top: calc(100% + 4px);
+    border-radius: 10px;
+    border-width: 1px;
   }
 
   .suggestion-img {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
   }
 
   .suggestion-name {
@@ -733,8 +770,31 @@ onMounted(() => {
     display: none;
   }
 
+  .navbar-right {
+    gap: 8px;
+  }
+
   .mobile-menu-btn {
     display: block;
+    width: 32px;
+    height: 32px;
+    padding: 6px;
+  }
+
+  .mobile-menu-btn .menu-line,
+  .mobile-menu-btn .menu-line::before,
+  .mobile-menu-btn .menu-line::after {
+    width: 20px;
+    height: 2px;
+    left: 6px;
+  }
+
+  .mobile-menu-btn .menu-line::before {
+    top: -6px;
+  }
+
+  .mobile-menu-btn .menu-line::after {
+    top: 6px;
   }
 
   .mobile-menu-overlay {
@@ -743,26 +803,38 @@ onMounted(() => {
 
   .mobile-menu {
     position: fixed;
-    top: 70px;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: 100%;
+    top: 52px;
+    right: 12px;
+    left: auto;
+    bottom: auto;
+    width: 220px;
     min-width: unset;
-    max-height: none;
-    border-radius: 0;
-    padding: 8px 0 100px;
+    max-height: 70vh;
+    border-radius: 12px;
+    padding: 6px 0;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   }
 
   .mobile-menu-item {
-    padding: 16px 20px;
+    padding: 12px 16px;
+    gap: 10px;
+  }
+
+  .mobile-menu-icon {
+    font-size: 16px;
+    width: 20px;
+  }
+
+  .mobile-menu-text {
+    font-size: 14px;
   }
 
   .navbar-right .auth-btn {
-    padding: 8px 14px;
-    font-size: 13px;
+    padding: 6px 12px;
+    font-size: 12px;
+    border-radius: 6px;
   }
 }
 
