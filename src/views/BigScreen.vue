@@ -277,15 +277,28 @@ const loadStats = async () => {
       // 有登录token，尝试获取统计数据
       try {
         console.log('BigScreen: 尝试获取统计数据，token存在')
-        const statsRes = await fetch('/api/stats/dashboard', {
+        
+        // 使用绝对路径请求API
+        const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+        const statsRes = await fetch(`${baseUrl}/stats/dashboard`, {
           headers: {
-            'Authorization': `Bearer ${adminToken}`
-          }
+            'Authorization': `Bearer ${adminToken}`,
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include'
         })
         
         console.log('BigScreen: 统计接口响应状态:', statsRes.status)
         
-        if (statsRes.ok) {
+        // 检查响应内容类型
+        const contentType = statsRes.headers.get('content-type')
+        if (!contentType || !contentType.includes('application/json')) {
+          console.log('BigScreen: 响应不是JSON，可能被重定向')
+          // 清除无效token
+          localStorage.removeItem('token')
+          localStorage.removeItem('admin')
+          isLoggedIn.value = false
+        } else if (statsRes.ok) {
           const statsData = await statsRes.json()
           console.log('BigScreen: 统计数据:', statsData)
           
@@ -316,9 +329,7 @@ const loadStats = async () => {
             console.log('BigScreen: 统计数据为空')
           }
         } else if (statsRes.status === 401) {
-          // Token过期或无效
           console.log('BigScreen: Token无效或已过期')
-          // 清除无效token
           localStorage.removeItem('token')
           localStorage.removeItem('admin')
           isLoggedIn.value = false
@@ -330,7 +341,6 @@ const loadStats = async () => {
         // 继续使用公开数据
       }
     } else {
-      // 无登录状态，使用公开数据
       console.log('BigScreen: 未登录，使用公开数据')
       metrics.value[1].value = 0
       metrics.value[3].value = 0
