@@ -156,73 +156,10 @@ const handleMenuClick = (menu) => {
   margin: 0;
 }
 
-/* 移动端适配 */
+/* 移动端适配：1200px 及以下完全隐藏侧边栏，由底部导航和汉堡菜单承担 */
 @media (max-width: 1200px) {
   .sidebar {
-    display: none;
-  }
-}
-
-@media (max-width: 768px) {
-  .sidebar {
-    display: flex;
-    width: 100%;
-    height: auto;
-    position: relative;
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: center;
-    padding: 10px 0;
-    top: auto;
-    left: auto;
-    bottom: auto;
-  }
-
-  .sidebar-header {
-    width: 100%;
-    padding: 15px;
-    border-bottom: none;
-  }
-
-  .logo-icon {
-    font-size: 32px;
-    margin-bottom: 5px;
-  }
-
-  .sidebar-header h1 {
-    font-size: 16px;
-  }
-
-  .sidebar-nav {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    padding: 10px;
-    gap: 5px;
-    width: 100%;
-  }
-
-  .menu-item {
-    padding: 10px 14px;
-    border-radius: 20px;
-    border-left: none;
-  }
-
-  .menu-item.active {
-    background: rgba(255, 255, 255, 0.15);
-  }
-
-  .menu-icon {
-    font-size: 16px;
-    margin-right: 6px;
-  }
-
-  .menu-text {
-    font-size: 13px;
-  }
-
-  .sidebar-footer {
-    display: none;
+    display: none !important;
   }
 }
 </style>
