@@ -254,7 +254,7 @@ const loadStats = async () => {
       }))
 
     // 检查是否有管理员登录token
-    const adminToken = localStorage.getItem('admin_token')
+    const adminToken = localStorage.getItem('token')
     if (adminToken) {
       // 有登录token，尝试获取统计数据
       try {
