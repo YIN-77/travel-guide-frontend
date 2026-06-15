@@ -234,11 +234,28 @@ const loadStats = async () => {
     // 标签总数（从景点中提取）
     const tagSet = new Set()
     destList.forEach(d => {
-      if (d.Tags && Array.isArray(d.Tags)) {
-        d.Tags.forEach(t => {
-          const name = typeof t === 'object' ? t.name : t
-          tagSet.add(name)
-        })
+      if (d.Tags) {
+        // Tags 可能是字符串或数组
+        if (Array.isArray(d.Tags)) {
+          d.Tags.forEach(t => {
+            const name = typeof t === 'object' ? t.name : t
+            tagSet.add(name)
+          })
+        } else if (typeof d.Tags === 'string' && d.Tags.trim()) {
+          // 如果是字符串，尝试解析为JSON数组
+          try {
+            const tags = JSON.parse(d.Tags)
+            if (Array.isArray(tags)) {
+              tags.forEach(t => {
+                const name = typeof t === 'object' ? t.name : t
+                tagSet.add(name)
+              })
+            }
+          } catch (e) {
+            // 如果不是JSON，当作单个标签
+            tagSet.add(d.Tags.trim())
+          }
+        }
       }
     })
     metrics.value[2].value = tagSet.size
@@ -335,11 +352,26 @@ const loadDestinationsForCharts = async () => {
         rankData.push({ name: d.name, value: rating })
       }
 
-      if (d.Tags && Array.isArray(d.Tags)) {
-        d.Tags.forEach((t) => {
-          const name = typeof t === 'object' ? t.name : t
-          tagMap[name] = (tagMap[name] || 0) + 1
-        })
+      if (d.Tags) {
+        if (Array.isArray(d.Tags)) {
+          d.Tags.forEach((t) => {
+            const name = typeof t === 'object' ? t.name : t
+            tagMap[name] = (tagMap[name] || 0) + 1
+          })
+        } else if (typeof d.Tags === 'string' && d.Tags.trim()) {
+          try {
+            const tags = JSON.parse(d.Tags)
+            if (Array.isArray(tags)) {
+              tags.forEach((t) => {
+                const name = typeof t === 'object' ? t.name : t
+                tagMap[name] = (tagMap[name] || 0) + 1
+              })
+            }
+          } catch (e) {
+            const name = d.Tags.trim()
+            tagMap[name] = (tagMap[name] || 0) + 1
+          }
+        }
       }
     })
 
