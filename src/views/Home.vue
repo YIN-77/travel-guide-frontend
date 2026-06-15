@@ -6,6 +6,92 @@
 
       <main class="main-content">
         <div class="scrollable-content">
+          <!-- 搜索结果区域 -->
+          <div v-if="searchQuery" class="search-results">
+            <div class="search-results-header">
+              <h2 class="search-results-title">🔍 搜索结果：{{ searchQuery }}</h2>
+              <button class="clear-search-btn" @click="clearSearch">清除搜索</button>
+            </div>
+            
+            <!-- 相关景点 -->
+            <section v-if="searchedDestinations.length > 0" class="search-section">
+              <h3 class="search-section-title">🗺️ 相关景点 <span class="result-count">({{ searchedDestinations.length }})</span></h3>
+              <div class="search-grid">
+                <div v-for="dest in searchedDestinations" :key="dest.id" class="search-card destination-card" @click="viewDestination(dest.id)">
+                  <img :src="processCardImageUrl(dest.image)" :alt="dest.name" class="search-card-img" />
+                  <div class="search-card-info">
+                    <h4>{{ dest.name }}</h4>
+                    <p class="search-card-location">📍 {{ dest.location }}</p>
+                    <div class="search-card-rating">⭐ {{ dest.rating }}</div>
+                  </div>
+                </div>
+              </div>
+            </section>
+            
+            <!-- 相关行程规划 -->
+            <section v-if="searchedItineraries.length > 0" class="search-section">
+              <h3 class="search-section-title">📅 相关行程规划 <span class="result-count">({{ searchedItineraries.length }})</span></h3>
+              <div class="search-grid">
+                <div v-for="item in searchedItineraries" :key="item.id" class="search-card" @click="viewItinerary(item.id)">
+                  <img :src="processCardImageUrl(item.coverImage || item.cover_image || item.image)" :alt="item.title" class="search-card-img" />
+                  <div class="search-card-info">
+                    <h4>{{ item.title }}</h4>
+                    <p class="search-card-desc">{{ (item.description || '').substring(0, 40) }}...</p>
+                    <div class="search-card-meta">
+                      <span>👤 {{ item.author_name || item.author || '匿名' }}</span>
+                      <span>👍 {{ item.likes || 0 }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+            
+            <!-- 相关旅游攻略 -->
+            <section v-if="searchedGuides.length > 0" class="search-section">
+              <h3 class="search-section-title">📖 相关旅游攻略 <span class="result-count">({{ searchedGuides.length }})</span></h3>
+              <div class="search-grid">
+                <div v-for="item in searchedGuides" :key="item.id" class="search-card" @click="viewGuide(item.id)">
+                  <img :src="processCardImageUrl(item.cover_image || item.coverImage || item.image)" :alt="item.title" class="search-card-img" />
+                  <div class="search-card-info">
+                    <h4>{{ item.title }}</h4>
+                    <p class="search-card-desc">{{ (item.description || '').substring(0, 40) }}...</p>
+                    <div class="search-card-meta">
+                      <span>👤 {{ item.author_name || item.author || '匿名' }}</span>
+                      <span>👍 {{ item.likes || 0 }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+            
+            <!-- 相关旅游资讯 -->
+            <section v-if="searchedNews.length > 0" class="search-section">
+              <h3 class="search-section-title">📰 相关旅游资讯 <span class="result-count">({{ searchedNews.length }})</span></h3>
+              <div class="search-grid news-grid">
+                <div v-for="item in searchedNews" :key="item.id" class="search-card news-card" @click="viewNews(item.id)">
+                  <img :src="processCardImageUrl(item.cover_image || item.coverImage || item.image)" :alt="item.title" class="search-card-img" />
+                  <div class="search-card-info">
+                    <h4>{{ item.title }}</h4>
+                    <p class="search-card-desc">{{ (item.description || '').substring(0, 40) }}...</p>
+                    <div class="search-card-meta">
+                      <span>{{ formatDate(item.created_at || item.date) }}</span>
+                      <span>{{ item.category }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+            
+            <!-- 无搜索结果 -->
+            <div v-if="noSearchResults" class="no-results">
+              <div class="no-results-icon">🔍</div>
+              <p>未找到与"{{ searchQuery }}"相关的内容</p>
+              <span>尝试其他关键词或浏览其他分类</span>
+            </div>
+          </div>
+
+          <!-- 常规首页内容（无搜索时显示） -->
+          <div v-if="!searchQuery">
           <!-- 轮播图 -->
           <section class="carousel-section">
             <el-carousel :interval="4000" arrow="hover" height="360px">
@@ -116,6 +202,7 @@
               </div>
             </div>
           </section>
+          </div>
         </div>
       </main>
       <MobileBottomNav />
@@ -124,7 +211,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import Sidebar from '../components/Sidebar.vue'
 import Navbar from '../components/Navbar.vue'
 import MobileBottomNav from '../components/MobileBottomNav.vue'
@@ -132,13 +219,79 @@ import { destinationAPI } from '../api/destinations'
 import { guideAPI } from '../api/guide'
 import { itineraryAPI } from '../api/itinerary'
 import { newsAPI } from '../api/news'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 
 const router = useRouter()
+const route = useRoute()
 const destinations = ref([])
 const guides = ref([])
 const itineraries = ref([])
 const newsList = ref([])
+const searchQuery = ref('')
+
+// 搜索状态
+watch(() => route.query.search, (newSearch) => {
+  searchQuery.value = newSearch || ''
+}, { immediate: true })
+
+// 清除搜索
+const clearSearch = () => {
+  searchQuery.value = ''
+  router.push('/')
+}
+
+// 搜索结果计算属性 - 景点
+const searchedDestinations = computed(() => {
+  if (!searchQuery.value) return []
+  const query = searchQuery.value.toLowerCase()
+  return destinations.value.filter(dest =>
+    (dest.name && dest.name.toLowerCase().includes(query)) ||
+    (dest.location && dest.location.toLowerCase().includes(query)) ||
+    (dest.description && dest.description.toLowerCase().includes(query))
+  )
+})
+
+// 搜索结果计算属性 - 行程规划
+const searchedItineraries = computed(() => {
+  if (!searchQuery.value) return []
+  const query = searchQuery.value.toLowerCase()
+  return itineraries.value.filter(item =>
+    (item.title && item.title.toLowerCase().includes(query)) ||
+    (item.description && item.description.toLowerCase().includes(query)) ||
+    (item.destination && item.destination.toLowerCase().includes(query))
+  )
+})
+
+// 搜索结果计算属性 - 旅游攻略
+const searchedGuides = computed(() => {
+  if (!searchQuery.value) return []
+  const query = searchQuery.value.toLowerCase()
+  return guides.value.filter(item =>
+    (item.title && item.title.toLowerCase().includes(query)) ||
+    (item.description && item.description.toLowerCase().includes(query)) ||
+    (item.content && item.content.toLowerCase().includes(query))
+  )
+})
+
+// 搜索结果计算属性 - 旅游资讯
+const searchedNews = computed(() => {
+  if (!searchQuery.value) return []
+  const query = searchQuery.value.toLowerCase()
+  return newsList.value.filter(item =>
+    (item.title && item.title.toLowerCase().includes(query)) ||
+    (item.description && item.description.toLowerCase().includes(query)) ||
+    (item.category && item.category.toLowerCase().includes(query))
+  )
+})
+
+// 无搜索结果
+const noSearchResults = computed(() => {
+  return searchQuery.value && 
+    searchedDestinations.value.length === 0 &&
+    searchedItineraries.value.length === 0 &&
+    searchedGuides.value.length === 0 &&
+    searchedNews.value.length === 0
+})
 
 // 轮播图数据（保持静态）
 const carouselItems = ref([
@@ -727,5 +880,157 @@ onMounted(() => {
   .destination-hero { height: 200px; }
   .destination-title { font-size: 24px; }
   .destination-info { padding: 20px; }
+}
+
+/* 搜索结果区域样式 */
+.search-results {
+  padding: 0;
+}
+
+.search-results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 16px 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.search-results-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+.clear-search-btn {
+  padding: 8px 16px;
+  background: #f1f5f9;
+  color: #64748b;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.clear-search-btn:hover {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.search-section {
+  margin-bottom: 24px;
+}
+
+.search-section-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 16px 0;
+}
+
+.result-count {
+  font-size: 14px;
+  font-weight: 400;
+  color: #64748b;
+}
+
+.search-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.search-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.search-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.search-card-img {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+}
+
+.search-card-info {
+  padding: 14px;
+}
+
+.search-card-info h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 8px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-card-location {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0 0 6px 0;
+}
+
+.search-card-rating {
+  font-size: 14px;
+  color: #f59e0b;
+  font-weight: 600;
+}
+
+.search-card-desc {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0 0 8px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.search-card-meta {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.news-grid .search-card-img {
+  height: 120px;
+}
+
+.no-results {
+  text-align: center;
+  padding: 60px 20px;
+  background: white;
+  border-radius: 12px;
+}
+
+.no-results-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.no-results p {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 8px 0;
+}
+
+.no-results span {
+  font-size: 14px;
+  color: #64748b;
 }
 </style>
