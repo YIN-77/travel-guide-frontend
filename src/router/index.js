@@ -43,6 +43,11 @@ const routes = [
     component: () => import('../views/GuideDetail.vue')
   },
   {
+    path: '/bigscreen',
+    name: 'BigScreen',
+    component: () => import('../views/BigScreen.vue')
+  },
+  {
     path: '/news-detail',
     name: 'NewsDetail',
     component: () => import('../views/NewsDetail.vue')

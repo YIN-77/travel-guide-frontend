@@ -13,6 +13,9 @@
         <el-menu-item index="/admin">
           <span>仪表盘</span>
         </el-menu-item>
+        <el-menu-item index="bigscreen" @click="openBigScreen">
+          <span>📊 数据大屏（新窗口）</span>
+        </el-menu-item>
         <el-menu-item index="/admin/destinations">
           <span>景点管理</span>
         </el-menu-item>
@@ -93,6 +96,10 @@ const handleLogout = () => {
   authStore.logout()
   ElMessage.success('已退出登录')
   router.push('/admin/login')
+}
+
+const openBigScreen = () => {
+  window.open('/bigscreen', '_blank')
 }
 </script>
 
