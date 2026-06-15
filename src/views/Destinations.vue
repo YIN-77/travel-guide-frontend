@@ -826,7 +826,7 @@ onUnmounted(() => {
 
 @media (max-width: 768px) {
   .destinations-page {
-    padding-top: 70px;
+    padding-top: 52px;
   }
   
   .container {
@@ -838,13 +838,104 @@ onUnmounted(() => {
     padding: 12px;
   }
 
+  .page-header {
+    padding: 0 8px 16px;
+  }
+
+  .page-header h1 {
+    font-size: 20px;
+  }
+
+  .page-header p {
+    font-size: 13px;
+  }
+
+  .filters-bar {
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .filter-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .filters-bar .custom-select {
+    flex: 1;
+    min-width: calc(50% - 4px);
+    max-width: 100%;
+  }
+
+  .filters-bar .select-trigger {
+    padding: 8px 12px;
+    font-size: 13px;
+    border-radius: 8px;
+    border-width: 1px;
+  }
+
+  .filters-bar .select-dropdown {
+    min-width: calc(100vw - 60px);
+    left: -4px;
+    max-height: 250px;
+  }
+
+  .filters-bar .options-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    padding: 8px;
+  }
+
+  .filters-bar .select-dropdown.small {
+    min-width: calc(100vw - 60px);
+  }
+
+  .filters-bar .select-dropdown.small .options-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .filters-bar .option-item {
+    padding: 8px 6px;
+    font-size: 12px;
+  }
+
+  .filters-bar .search-button {
+    width: 100%;
+    padding: 10px;
+    font-size: 14px;
+    border-radius: 8px;
+  }
+
+  .content-area {
+    margin-top: 16px;
+  }
+
   .destinations-grid {
     grid-template-columns: 1fr;
-    gap: 16px;
+    gap: 12px;
+    padding: 0;
+  }
+
+  .destination-card {
+    border-radius: 12px;
   }
 
   .card-image {
-    height: 180px;
+    height: 160px;
+  }
+
+  .card-content {
+    padding: 16px;
+  }
+
+  .card-title {
+    font-size: 16px;
+  }
+
+  .card-desc {
+    font-size: 13px;
   }
 
   .pagination {
@@ -863,18 +954,9 @@ onUnmounted(() => {
   .pagination-info {
     font-size: 13px;
   }
-}
 
-@media (max-width: 768px) {
-  .destinations-page .container { margin-left: 0; }
-  .destinations-page .main-content { padding-bottom: 60px; }
-  .destinations-page .page-header h1 { font-size: 20px; }
-  .destinations-page .page-header { padding: 15px; }
-  .destinations-grid { grid-template-columns: 1fr; gap: 12px; }
-  .destinations-page .content-area { padding: 15px; }
-  .dest-card-img { height: 160px; }
-  .dest-card-title { font-size: 16px; }
-  .search-bar { flex-direction: column; gap: 8px; }
-  .search-input, .filter-select, .search-button { width: 100%; }
+  .destinations-page .main-content {
+    padding-bottom: 60px;
+  }
 }
 </style>
