@@ -272,24 +272,33 @@ const loadStats = async () => {
 
     // 检查是否有管理员登录token
     const adminToken = localStorage.getItem('token')
-    if (adminToken) {
+    const adminData = localStorage.getItem('admin')
+    if (adminToken && adminData) {
       // 有登录token，尝试获取统计数据
       try {
+        console.log('BigScreen: 尝试获取统计数据，token存在')
         const statsRes = await fetch('/api/stats/dashboard', {
           headers: {
             'Authorization': `Bearer ${adminToken}`
           }
         })
+        
+        console.log('BigScreen: 统计接口响应状态:', statsRes.status)
+        
         if (statsRes.ok) {
           const statsData = await statsRes.json()
+          console.log('BigScreen: 统计数据:', statsData)
+          
           if (statsData.data) {
             // 使用真实统计数据
-            metrics.value[1].value = statsData.data.reviewCount || 0
-            metrics.value[3].value = statsData.data.adminCount || 0
+            metrics.value[1].value = statsData.data.reviewCount || statsData.data.count?.reviews || 0
+            metrics.value[3].value = statsData.data.adminCount || statsData.data.count?.admins || 0
             
             // 最新评论
             if (statsData.data.recentReviews && Array.isArray(statsData.data.recentReviews)) {
               recentReviews.value = statsData.data.recentReviews.slice(0, 6)
+            } else if (statsData.data.reviews && Array.isArray(statsData.data.reviews)) {
+              recentReviews.value = statsData.data.reviews.slice(0, 6)
             }
             
             // 如果有更新的景点列表
@@ -302,14 +311,27 @@ const loadStats = async () => {
             }
             
             isLoggedIn.value = true
+            console.log('BigScreen: 成功获取统计数据')
+          } else {
+            console.log('BigScreen: 统计数据为空')
           }
+        } else if (statsRes.status === 401) {
+          // Token过期或无效
+          console.log('BigScreen: Token无效或已过期')
+          // 清除无效token
+          localStorage.removeItem('token')
+          localStorage.removeItem('admin')
+          isLoggedIn.value = false
+        } else {
+          console.log('BigScreen: 统计接口返回错误:', statsRes.status)
         }
       } catch (statsErr) {
-        console.error('获取统计数据失败:', statsErr)
+        console.error('BigScreen: 获取统计数据失败:', statsErr)
         // 继续使用公开数据
       }
     } else {
       // 无登录状态，使用公开数据
+      console.log('BigScreen: 未登录，使用公开数据')
       metrics.value[1].value = 0
       metrics.value[3].value = 0
       isLoggedIn.value = false
