@@ -220,18 +220,16 @@ const animateNumber = (target, endValue, duration = 1500) => {
   requestAnimationFrame(animate)
 }
 
-// 加载统计数据（从公开接口获取真实数据）
+// 加载统计数据（尝试使用管理员登录状态）
 const loadStats = async () => {
   try {
-    const res = await destinationAPI.getList({ page: 1, pageSize: 100 })
-    const destList = (res.data?.items || res.data?.list || res.data || res || [])
-    const total = res.data?.total || destList.length
+    // 先从公开接口获取景点数据
+    const destRes = await destinationAPI.getList({ page: 1, pageSize: 100 })
+    const destList = (destRes.data?.items || destRes.data?.list || destRes.data || destRes || [])
+    const total = destRes.data?.total || destList.length
 
     // 景点总数
     metrics.value[0].value = total
-
-    // 评论总数（从评论接口获取）
-    metrics.value[1].value = 0
 
     // 标签总数（从景点中提取）
     const tagSet = new Set()
@@ -245,9 +243,6 @@ const loadStats = async () => {
     })
     metrics.value[2].value = tagSet.size
 
-    // 管理员数（需要登录后获取）
-    metrics.value[3].value = 0
-
     // 最新景点列表（按ID倒序）
     recentDestinations.value = [...destList]
       .sort((a, b) => (b.id || 0) - (a.id || 0))
@@ -258,10 +253,50 @@ const loadStats = async () => {
         rating: parseFloat(d.rating) || 0
       }))
 
-    // 评论列表（需要登录后获取）
-    recentReviews.value = []
-
-    isLoggedIn.value = false
+    // 检查是否有管理员登录token
+    const adminToken = localStorage.getItem('admin_token')
+    if (adminToken) {
+      // 有登录token，尝试获取统计数据
+      try {
+        const statsRes = await fetch('/api/stats/dashboard', {
+          headers: {
+            'Authorization': `Bearer ${adminToken}`
+          }
+        })
+        if (statsRes.ok) {
+          const statsData = await statsRes.json()
+          if (statsData.data) {
+            // 使用真实统计数据
+            metrics.value[1].value = statsData.data.reviewCount || 0
+            metrics.value[3].value = statsData.data.adminCount || 0
+            
+            // 最新评论
+            if (statsData.data.recentReviews && Array.isArray(statsData.data.recentReviews)) {
+              recentReviews.value = statsData.data.recentReviews.slice(0, 6)
+            }
+            
+            // 如果有更新的景点列表
+            if (statsData.data.recentDestinations && Array.isArray(statsData.data.recentDestinations)) {
+              recentDestinations.value = statsData.data.recentDestinations.slice(0, 6).map(d => ({
+                name: d.name,
+                location: d.location,
+                rating: parseFloat(d.rating) || 0
+              }))
+            }
+            
+            isLoggedIn.value = true
+          }
+        }
+      } catch (statsErr) {
+        console.error('获取统计数据失败:', statsErr)
+        // 继续使用公开数据
+      }
+    } else {
+      // 无登录状态，使用公开数据
+      metrics.value[1].value = 0
+      metrics.value[3].value = 0
+      isLoggedIn.value = false
+    }
   } catch (err) {
     console.error('加载统计数据失败:', err)
     metrics.value = [
