@@ -13,7 +13,7 @@
         <el-menu-item index="/admin">
           <span>仪表盘</span>
         </el-menu-item>
-        <el-menu-item index="bigscreen" @click="openBigScreen">
+        <el-menu-item :index="''" @click="openBigScreen">
           <span>📊 数据大屏（新窗口）</span>
         </el-menu-item>
         <el-menu-item index="/admin/destinations">
