@@ -586,7 +586,26 @@ const handleSubmit = async () => {
     if (valid) {
       loading.value = true
       try {
-        const data = { ...form }
+        // 准备提交数据，确保格式与后端一致
+        const data = {
+          name: form.name,
+          location: form.location,
+          rating: String(form.rating),
+          image: form.image,
+          images: form.images.length > 0 ? JSON.stringify(form.images) : '',
+          video: form.video,
+          description: form.description,
+          tags: form.tags,
+          latitude: form.latitude || null,
+          longitude: form.longitude || null,
+          openingHours: form.openingHours,
+          ticketPrice: form.ticketPrice,
+          transport: form.transport,
+          bestTime: form.bestTime,
+          duration: form.duration,
+          tips: form.tips
+        }
+        
         let res
         if (isEdit.value) {
           res = await destinationAPI.update(route.params.id, data)
@@ -597,8 +616,11 @@ const handleSubmit = async () => {
         if (res.code === 200 || res.code === 201) {
           ElMessage.success(isEdit.value ? '保存成功' : '创建成功')
           router.push('/admin/destinations')
+        } else {
+          ElMessage.error(res.message || (isEdit.value ? '保存失败' : '创建失败'))
         }
       } catch (error) {
+        console.error('保存失败详情:', error)
         ElMessage.error(isEdit.value ? '保存失败' : '创建失败')
       } finally {
         loading.value = false
