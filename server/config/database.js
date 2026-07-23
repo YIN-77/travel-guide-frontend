@@ -7,14 +7,18 @@ const sequelize = new Sequelize(process.env.DATABASE_URL, {
     pool: {
       max: 1,
       min: 0,
-      acquire: 30000,
+      acquire: 8000,
       idle: 10000
     },
     dialectOptions: {
       ssl: {
         require: true,
         rejectUnauthorized: false
-      }
+      },
+      connectTimeout: 5000
+    },
+    retry: {
+      max: 2
     }
   }
 );

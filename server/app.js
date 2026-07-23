@@ -1,11 +1,34 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const app = express();
 
 // 中间件
-app.use(cors());
+app.use(cors({
+  origin: ['https://traval-guide-inone.netlify.app', 'http://localhost:5173', 'http://localhost:3000'],
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// 请求超时中间件
+app.use((req, res, next) => {
+  const timer = setTimeout(() => {
+    if (!res.headersSent) {
+      res.status(504).json({ code: 504, message: '请求超时，请重试', data: null });
+    }
+  }, 25000); // Netlify Functions 限制 26 秒
+  res.on('finish', () => clearTimeout(timer));
+  next();
+});
+
+// 静态文件服务
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// 健康检查端点（不依赖数据库）
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
 
 // API 路由
 const routes = require('./routes');
