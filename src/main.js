@@ -6,6 +6,7 @@ import router from './router'
 import App from './App.vue'
 import './style.css'
 
+// API 通过 Netlify Functions 提供
 const app = createApp(App)
 const pinia = createPinia()
 
