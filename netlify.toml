@@ -5,6 +5,7 @@ base = "."
 
 [build.environment]
 NODE_VERSION = "18"
+VITE_API_URL = "/api"
 
 [functions]
 node_bundler = "esbuild"
