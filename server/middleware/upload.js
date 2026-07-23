@@ -2,10 +2,17 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// 确保上传目录存在
-const uploadDir = path.join(__dirname, '../uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+// 确保上传目录存在（Serverless 环境下使用 /tmp）
+const isServerless = !!process.env.NETLIFY || !!process.env.LAMBDA_TASK_ROOT;
+const uploadDir = isServerless
+  ? '/tmp/uploads'
+  : path.join(__dirname, '../uploads');
+try {
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+} catch (e) {
+  console.warn('无法创建上传目录:', e.message);
 }
 
 // 配置文件上传
