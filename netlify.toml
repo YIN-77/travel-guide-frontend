@@ -8,18 +8,22 @@ NODE_VERSION = "18"
 
 [functions]
 node_bundler = "esbuild"
+included_files = ["server/**"]
 
-[[redirects]]
-from = "/*"
-to = "/index.html"
-status = 200
-
+# API 请求 → Netlify Functions（必须在 SPA 规则前面）
 [[redirects]]
 from = "/api/*"
 to = "/.netlify/functions/api/:splat"
 status = 200
 
+# Uploads 请求 → Railway（已到期，暂不可用）
 [[redirects]]
 from = "/uploads/*"
-to = "https://travel-guide-server-production-ea9a.up.railway.app/uploads/:splat"
+to = "/.netlify/functions/api/uploads/:splat"
+status = 200
+
+# SPA 回退（必须放在最后）
+[[redirects]]
+from = "/*"
+to = "/index.html"
 status = 200
