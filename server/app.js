@@ -65,20 +65,26 @@ const errorHandler = require('./middleware/errorHandler');
 app.use(errorHandler);
 
 // 初始化数据库（仅冷启动时执行一次）
-let dbInitialized = false;
+let dbInitPromise = null;
 const initDB = async () => {
-  if (dbInitialized) return;
   try {
     const { sequelize } = require('./models');
     await sequelize.authenticate();
     console.log('数据库连接成功');
     await sequelize.sync({ force: false });
     console.log('数据库表同步成功');
-    dbInitialized = true;
   } catch (error) {
     console.error('数据库连接失败:', error.message);
+    throw error;
   }
 };
-initDB();
+
+// 导出 app 和 db 初始化 Promise
+app.dbReady = () => {
+  if (!dbInitPromise) {
+    dbInitPromise = initDB();
+  }
+  return dbInitPromise;
+};
 
 module.exports = app;
