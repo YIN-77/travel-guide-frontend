@@ -148,16 +148,26 @@ import { useRouter } from 'vue-router'
 import { notificationAPI } from '../api/notifications'
 import { destinationAPI } from '../api/destinations'
 import { searchAPI } from '../api/search'
+import { useSharedDestinations } from '../composables/useSharedDestinations'
 
 const authStore = useAuthStore()
 const router = useRouter()
 const showAuthModal = ref(false)
+const { destinations: sharedDestinations, loaded: sharedLoaded } = useSharedDestinations()
 const unreadCount = ref(0)
 const searchQuery = ref('')
 const showSuggestions = ref(false)
 const searchSuggestions = ref([])
 const allDestinations = ref([])
 const mobileMenuOpen = ref(false)
+
+const allSearchDestinations = computed(() => {
+  // 优先使用共享数据（从首页加载的），否则使用本地加载的
+  if (sharedLoaded.value && sharedDestinations.value.length > 0) {
+    return sharedDestinations.value
+  }
+  return allDestinations.value
+})
 
 const levelNames = ['', '初级旅行者', '背包客', '旅行达人', '资深玩家', '环球旅行家', '至尊旅行家']
 const levelIcons = ['', '🌱', '🎒', '🌟', '💎', '🌍', '👑']
@@ -250,7 +260,7 @@ const searchFromHot = (keyword) => {
 const handleSearchInput = () => {
   if (searchQuery.value.trim()) {
     const query = searchQuery.value.toLowerCase()
-    searchSuggestions.value = allDestinations.value.filter(dest =>
+    searchSuggestions.value = allSearchDestinations.value.filter(dest =>
       dest.name.toLowerCase().includes(query) ||
       dest.location.toLowerCase().includes(query)
     ).slice(0, 6)
@@ -368,7 +378,10 @@ watch(() => authStore.isUserLoggedIn, () => {
 
 onMounted(() => {
   fetchUnreadCount()
-  loadDestinations()
+  // 只在共享数据不可用时才独立加载（兜底）
+  if (!sharedLoaded.value || sharedDestinations.value.length === 0) {
+    loadDestinations()
+  }
   loadSearchHistory()
   loadHotSearches()
   // 每30秒刷新一次未读消息

@@ -215,14 +215,13 @@ import { ref, computed, onMounted, watch } from 'vue'
 import Sidebar from '../components/Sidebar.vue'
 import Navbar from '../components/Navbar.vue'
 import MobileBottomNav from '../components/MobileBottomNav.vue'
-import { destinationAPI } from '../api/destinations'
-import { guideAPI } from '../api/guide'
-import { itineraryAPI } from '../api/itinerary'
-import { newsAPI } from '../api/news'
+import { useSharedDestinations } from '../composables/useSharedDestinations'
+import homeAPI from '../api/home'
 import { useRouter, useRoute } from 'vue-router'
 
 const router = useRouter()
 const route = useRoute()
+const { setDestinations } = useSharedDestinations()
 const destinations = ref([])
 const guides = ref([])
 const itineraries = ref([])
@@ -428,55 +427,25 @@ const highlightKeyword = (text) => {
   }
 }
 
-const loadDestinations = async () => {
+const loadHomeData = async () => {
   try {
-    const res = await destinationAPI.getList({ page: 1, limit: 100 })
+    const res = await homeAPI.getHomeData()
     if (res.code === 200) {
-      destinations.value = res.data.list
+      const { destinations: dests, itineraries: itins, guides: gds, newsList: nws } = res.data
+      destinations.value = dests || []
+      itineraries.value = itins || []
+      guides.value = gds || []
+      newsList.value = nws || []
+      // 共享景点数据给 Navbar
+      setDestinations(dests || [])
     }
   } catch (error) {
-    console.error('加载景点数据失败:', error)
-  }
-}
-
-const loadItineraries = async () => {
-  try {
-    const res = await itineraryAPI.getPublicList({ page: 1, limit: 50 })
-    if (res.code === 200) {
-      itineraries.value = res.data.list || []
-    }
-  } catch (error) {
-    console.error('加载行程数据失败:', error)
-  }
-}
-
-const loadGuides = async () => {
-  try {
-    const res = await guideAPI.getAll({ page: 1, limit: 50 })
-    if (res.code === 200) {
-      guides.value = res.data.list || []
-    }
-  } catch (error) {
-    console.error('加载攻略数据失败:', error)
-  }
-}
-
-const loadNews = async () => {
-  try {
-    const res = await newsAPI.getAll({ page: 1, limit: 10 })
-    if (res.code === 200) {
-      newsList.value = res.data.list || []
-    }
-  } catch (error) {
-    console.error('加载资讯数据失败:', error)
+    console.error('加载首页数据失败:', error)
   }
 }
 
 onMounted(() => {
-  loadDestinations()
-  loadItineraries()
-  loadGuides()
-  loadNews()
+  loadHomeData()
 })
 </script>
 
