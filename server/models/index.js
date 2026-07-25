@@ -13,6 +13,9 @@ const ItineraryActivity = require('./ItineraryActivity');
 const Guide = require('./Guide');
 const News = require('./News');
 const Interaction = require('./Interaction');
+const Follow = require('./Follow');
+const FavoriteGroup = require('./FavoriteGroup');
+const ReviewLike = require('./ReviewLike');
 
 // 定义关联关系
 Destination.belongsToMany(Tag, {
@@ -46,6 +49,15 @@ User.hasMany(Review, {
   foreignKey: 'user_id',
   as: 'userReviews'
 });
+
+// 评论自引用关联（嵌套回复）
+Review.belongsTo(Review, { as: 'parent', foreignKey: 'parent_id' });
+Review.hasMany(Review, { as: 'replies', foreignKey: 'parent_id' });
+
+// 评论点赞关联
+Review.hasMany(ReviewLike, { as: 'reviewLikes', foreignKey: 'review_id' });
+ReviewLike.belongsTo(Review, { foreignKey: 'review_id' });
+ReviewLike.belongsTo(User, { foreignKey: 'user_id' });
 
 // 收藏关系
 User.belongsToMany(Destination, {
@@ -84,6 +96,46 @@ Destination.belongsToMany(User, {
 User.hasMany(Like, { foreignKey: 'user_id' });
 Like.belongsTo(User, { foreignKey: 'user_id' });
 Like.belongsTo(Destination, { foreignKey: 'destination_id' });
+
+// 关注/粉丝关联关系
+User.belongsToMany(User, {
+  as: 'followers',
+  through: Follow,
+  foreignKey: 'following_id',
+  otherKey: 'follower_id'
+});
+
+User.belongsToMany(User, {
+  as: 'following',
+  through: Follow,
+  foreignKey: 'follower_id',
+  otherKey: 'following_id'
+});
+
+Follow.belongsTo(User, {
+  as: 'follower',
+  foreignKey: 'follower_id'
+});
+
+Follow.belongsTo(User, {
+  as: 'following',
+  foreignKey: 'following_id'
+});
+
+// 收藏夹分组关联关系
+FavoriteGroup.belongsTo(User, { foreignKey: 'user_id' });
+User.hasMany(FavoriteGroup, { foreignKey: 'user_id' });
+
+// Favorite 和 FavoriteGroup 关联
+Favorite.belongsTo(FavoriteGroup, {
+  foreignKey: 'group_id',
+  constraints: false
+});
+
+FavoriteGroup.hasMany(Favorite, {
+  foreignKey: 'group_id',
+  constraints: false
+});
 
 Notification.belongsTo(User, {
   foreignKey: 'userId',
@@ -135,5 +187,8 @@ module.exports = {
   ItineraryActivity,
   Guide,
   News,
-  Interaction
+  Interaction,
+  ReviewLike,
+  Follow,
+  FavoriteGroup
 };

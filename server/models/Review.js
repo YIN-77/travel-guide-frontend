@@ -24,8 +24,20 @@ const Review = sequelize.define('Review', {
     allowNull: false
   },
   rating: {
-    type: DataTypes.SMALLINT,
+    type: DataTypes.TINYINT,
     defaultValue: 5
+  },
+  parent_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
+  images: {
+    type: DataTypes.JSON,
+    defaultValue: []
+  },
+  like_count: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
   }
 }, {
   tableName: 'reviews',

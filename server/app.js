@@ -69,13 +69,23 @@ let dbInitPromise = null;
 const initDB = async () => {
   try {
     const { sequelize } = require('./models');
+    // 先尝试快速连接
     await sequelize.authenticate();
     console.log('数据库连接成功');
-    await sequelize.sync({ force: false });
-    console.log('数据库表同步成功');
+    // 注意：不在冷启动时执行 sync()，表结构已在部署时同步
+    // 如需同步表结构，请运行一次 node sync-db.js
   } catch (error) {
-    console.error('数据库连接失败:', error.message);
-    throw error;
+    console.error('数据库连接失败，尝试重试...:', error.message);
+    // 连接失败时等待 2 秒后重试一次
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    try {
+      const { sequelize } = require('./models');
+      await sequelize.authenticate();
+      console.log('数据库重连成功');
+    } catch (retryErr) {
+      console.error('数据库重连也失败:', retryErr.message);
+      throw retryErr;
+    }
   }
 };
 
