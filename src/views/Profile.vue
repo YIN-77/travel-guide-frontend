@@ -51,6 +51,24 @@
                   <h1 class="user-name">{{ authStore.user?.nickname || authStore.user?.username }}</h1>
                   <p class="user-email">{{ authStore.user?.email }}</p>
                   <p class="user-bio" v-if="authStore.user?.bio">{{ authStore.user.bio }}</p>
+                  
+                  <!-- 用户等级和积分 -->
+                  <div class="level-card">
+                    <div class="level-badge" :class="'level-' + (authStore.user?.level || 1)">
+                      <span class="level-icon">{{ levelIcon }}</span>
+                    </div>
+                    <div class="level-info">
+                      <div class="level-name">{{ levelName }}</div>
+                      <div class="level-points">{{ authStore.user?.points || 0 }} 积分</div>
+                      <div v-if="nextLevelInfo" class="level-progress-wrapper">
+                        <div class="level-progress-bar">
+                          <div class="level-progress-fill" :style="{ width: nextLevelInfo.progress + '%' }"></div>
+                        </div>
+                        <span class="level-progress-text">距离下一级还需 {{ nextLevelInfo.needPoints }} 分</span>
+                      </div>
+                      <div v-else class="level-max">已达最高等级！</div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -107,6 +125,19 @@
                     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82 1.65 1.65 0 0 0 1 1.51 V21"/>
                   </svg>
                   个人设置
+                </button>
+                <button 
+                  class="tab-btn" 
+                  :class="{ active: activeTab === 'social' }"
+                  @click="activeTab = 'social'"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                  </svg>
+                  关注/粉丝
                 </button>
               </div>
 
@@ -577,6 +608,62 @@
                       </button>
                     </div>
                   </div>
+
+                  <!-- 关注/粉丝 -->
+                  <div v-if="activeTab === 'social'">
+                    <div class="follow-stats-bar">
+                      <button class="follow-stats-item" :class="{ active: socialTab === 'following' }" @click="socialTab = 'following'">
+                        关注 <strong>{{ followStats.followingCount }}</strong>
+                      </button>
+                      <button class="follow-stats-item" :class="{ active: socialTab === 'followers' }" @click="socialTab = 'followers'">
+                        粉丝 <strong>{{ followStats.followerCount }}</strong>
+                      </button>
+                    </div>
+
+                    <!-- 关注列表 -->
+                    <div v-if="socialTab === 'following'">
+                      <div v-if="followingList.length === 0" class="empty-state">
+                        <p>还没有关注任何人</p>
+                        <span>去发现更多精彩吧！</span>
+                      </div>
+                      <div v-else class="follow-list">
+                        <div v-for="item in followingList" :key="item.id" class="follow-item">
+                          <div class="follow-user-avatar">
+                            <img v-if="item.following.avatar" :src="processAvatarUrl(item.following.avatar)" :alt="item.following.nickname" />
+                            <span v-else class="follow-avatar-letter">{{ (item.following.nickname || item.following.username || 'U').charAt(0).toUpperCase() }}</span>
+                          </div>
+                          <div class="follow-user-info">
+                            <span class="follow-user-name">{{ item.following.nickname || item.following.username }}</span>
+                            <span class="follow-user-bio" v-if="item.following.bio">{{ item.following.bio.substring(0, 30) }}</span>
+                          </div>
+                          <button v-if="item.isFollowing" class="follow-btn following" @click="handleUnfollow(item.following.id)">已关注</button>
+                          <button v-else class="follow-btn" @click="handleFollow(item.following.id)">+ 关注</button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- 粉丝列表 -->
+                    <div v-if="socialTab === 'followers'">
+                      <div v-if="followerList.length === 0" class="empty-state">
+                        <p>还没有粉丝</p>
+                        <span>去发布精彩内容吸引粉丝吧！</span>
+                      </div>
+                      <div v-else class="follow-list">
+                        <div v-for="item in followerList" :key="item.id" class="follow-item">
+                          <div class="follow-user-avatar">
+                            <img v-if="item.follower.avatar" :src="processAvatarUrl(item.follower.avatar)" :alt="item.follower.nickname" />
+                            <span v-else class="follow-avatar-letter">{{ (item.follower.nickname || item.follower.username || 'U').charAt(0).toUpperCase() }}</span>
+                          </div>
+                          <div class="follow-user-info">
+                            <span class="follow-user-name">{{ item.follower.nickname || item.follower.username }}</span>
+                            <span class="follow-user-bio" v-if="item.follower.bio">{{ item.follower.bio.substring(0, 30) }}</span>
+                          </div>
+                          <button v-if="item.isFollowing" class="follow-btn following" @click="handleUnfollow(item.follower.id)">已关注</button>
+                          <button v-else class="follow-btn" @click="handleFollow(item.follower.id)">+ 关注</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -589,7 +676,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { userAPI } from '../api/user'
@@ -643,6 +730,107 @@ const passwordForm = ref({
 })
 
 const savingPassword = ref(false)
+
+// 等级系统
+const levelNames = ['', '初级旅行者', '背包客', '旅行达人', '资深玩家', '环球旅行家', '至尊旅行家']
+const levelIcons = ['', '🌱', '🎒', '🌟', '💎', '🌍', '👑']
+const levelThresholds = [0, 100, 300, 600, 1000, 2000]
+
+const levelName = computed(() => {
+  const level = authStore.user?.level || 1
+  return levelNames[level] || '初级旅行者'
+})
+
+const levelIcon = computed(() => {
+  const level = authStore.user?.level || 1
+  return levelIcons[level] || '🌱'
+})
+
+const nextLevelInfo = computed(() => {
+  const points = authStore.user?.points || 0
+  const currentLevel = authStore.user?.level || 1
+  if (currentLevel >= 6) return null
+  const currentMin = levelThresholds[currentLevel - 1]
+  const nextMin = levelThresholds[currentLevel]
+  const progress = Math.floor(((points - currentMin) / (nextMin - currentMin)) * 100)
+  return {
+    progress: Math.min(progress, 100),
+    needPoints: nextMin - points
+  }
+})
+
+// 关注/粉丝
+const socialTab = ref('following')
+const followStats = ref({ followerCount: 0, followingCount: 0 })
+const followingList = ref([])
+const followerList = ref([])
+
+const loadFollowStats = async () => {
+  try {
+    const userId = authStore.user?.id
+    if (!userId) return
+    const res = await userAPI.getFollowStats(userId)
+    if (res.code === 200) {
+      followStats.value = res.data
+    }
+  } catch (error) {
+    console.error('加载关注统计失败:', error)
+  }
+}
+
+const loadFollowing = async () => {
+  try {
+    const userId = authStore.user?.id
+    if (!userId) return
+    const res = await userAPI.getFollowing(userId, 1, 100)
+    if (res.code === 200) {
+      followingList.value = res.data.list || []
+    }
+  } catch (error) {
+    console.error('加载关注列表失败:', error)
+  }
+}
+
+const loadFollowers = async () => {
+  try {
+    const userId = authStore.user?.id
+    if (!userId) return
+    const res = await userAPI.getFollowers(userId, 1, 100)
+    if (res.code === 200) {
+      followerList.value = res.data.list || []
+    }
+  } catch (error) {
+    console.error('加载粉丝列表失败:', error)
+  }
+}
+
+const handleFollow = async (targetUserId) => {
+  try {
+    const res = await userAPI.follow(targetUserId)
+    if (res.code === 200) {
+      ElMessage.success('关注成功')
+      loadFollowStats()
+      loadFollowing()
+      loadFollowers()
+    }
+  } catch (error) {
+    console.error('关注失败:', error)
+  }
+}
+
+const handleUnfollow = async (targetUserId) => {
+  try {
+    const res = await userAPI.unfollow(targetUserId)
+    if (res.code === 200) {
+      ElMessage.success('已取消关注')
+      loadFollowStats()
+      loadFollowing()
+      loadFollowers()
+    }
+  } catch (error) {
+    console.error('取消关注失败:', error)
+  }
+}
 
 const userInitial = computed(() => {
   return (authStore.user?.nickname || authStore.user?.username || 'U').charAt(0).toUpperCase()
@@ -957,6 +1145,20 @@ const formatNotificationTime = (dateString) => {
   return date.toLocaleDateString('zh-CN')
 }
 
+// 刷新用户信息
+const refreshUserProfile = async () => {
+  try {
+    const res = await userAPI.getProfile()
+    if (res.code === 200) {
+      const updatedUser = { ...authStore.user, ...res.data }
+      authStore.user = updatedUser
+      localStorage.setItem('user', JSON.stringify(updatedUser))
+    }
+  } catch (error) {
+    console.error('刷新用户信息失败:', error)
+  }
+}
+
 onMounted(() => {
   if (!authStore.isUserLoggedIn) {
     return
@@ -981,6 +1183,18 @@ onMounted(() => {
   loadAllLikes()
   loadReviews()
   loadNotifications()
+
+  // 刷新用户信息获取最新积分
+  refreshUserProfile()
+})
+
+// 监听 social 标签页，加载关注数据
+watch(activeTab, (newTab) => {
+  if (newTab === 'social') {
+    loadFollowStats()
+    loadFollowing()
+    loadFollowers()
+  }
 })
 </script>
 
@@ -1795,5 +2009,228 @@ onMounted(() => {
   .tabs { overflow-x: auto; gap: 0; }
   .tab { white-space: nowrap; padding: 12px 16px; font-size: 13px; }
   .content-area { padding: 15px; }
+}
+
+/* 等级卡片 */
+.level-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 12px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%);
+  border-radius: 12px;
+  border: 1px solid #c7d2fe;
+  max-width: 380px;
+}
+
+.level-badge {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.level-badge.level-1 { background: #e2e8f0; }
+.level-badge.level-2 { background: #bfdbfe; }
+.level-badge.level-3 { background: #c7d2fe; }
+.level-badge.level-4 { background: #e0e7ff; box-shadow: 0 0 12px rgba(99, 102, 241, 0.3); }
+.level-badge.level-5 { background: linear-gradient(135deg, #818cf8, #6366f1); }
+.level-badge.level-6 { background: linear-gradient(135deg, #fbbf24, #f59e0b); box-shadow: 0 0 16px rgba(251, 191, 36, 0.4); }
+
+.level-badge.level-5 .level-icon,
+.level-badge.level-6 .level-icon {
+  filter: brightness(1.2);
+}
+
+.level-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.level-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 2px;
+}
+
+.level-points {
+  font-size: 12px;
+  color: #6366f1;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.level-progress-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.level-progress-bar {
+  flex: 1;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.level-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #6366f1, #8b5cf6);
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.level-progress-text {
+  font-size: 11px;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.level-max {
+  font-size: 11px;
+  color: #f59e0b;
+  font-weight: 600;
+}
+
+/* 关注/粉丝样式 */
+.follow-stats-bar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.follow-stats-item {
+  flex: 1;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.follow-stats-item strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 20px;
+  color: #1e293b;
+}
+
+.follow-stats-item.active {
+  border-color: #6366f1;
+  background: #eef2ff;
+  color: #6366f1;
+}
+
+.follow-stats-item.active strong {
+  color: #6366f1;
+}
+
+.follow-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.follow-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+}
+
+.follow-item:hover {
+  background: #f1f5f9;
+}
+
+.follow-user-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.follow-user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.follow-avatar-letter {
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.follow-user-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.follow-user-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.follow-user-bio {
+  font-size: 12px;
+  color: #64748b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.follow-btn {
+  padding: 6px 16px;
+  border: 2px solid #6366f1;
+  background: transparent;
+  color: #6366f1;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.follow-btn:hover {
+  background: #6366f1;
+  color: white;
+}
+
+.follow-btn.following {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #64748b;
+}
+
+.follow-btn.following:hover {
+  background: #fee2e2;
+  border-color: #fecaca;
+  color: #dc2626;
 }
 </style>

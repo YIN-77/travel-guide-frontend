@@ -166,6 +166,13 @@
             <span class="action-icon">🔗</span>
             <span>分享</span>
           </button>
+          <button 
+            class="action-btn compare-btn"
+            @click="handleAddToCompare"
+          >
+            <span class="action-icon">⚖️</span>
+            <span>加入对比</span>
+          </button>
         </div>
 
         <!-- 分享菜单 -->
@@ -299,16 +306,35 @@
                   />
                 </el-form-item>
                 <el-form-item class="form-item-full form-actions">
-                  <el-button type="primary" @click="handleSubmitReview" :loading="submitting" class="submit-btn">
-                    发表评论
-                  </el-button>
+                  <div class="form-actions-row">
+                    <!-- 图片上传按钮 -->
+                    <label class="upload-image-btn">
+                      <input type="file" accept="image/*" class="upload-input-hidden" @change="handleUploadImage" />
+                      <span>📷 图片</span>
+                    </label>
+                    <!-- 图片预览 -->
+                    <div v-for="(img, idx) in uploadedImages" :key="idx" class="upload-preview-item">
+                      <img :src="img" class="upload-preview-img" />
+                      <button class="remove-preview-btn" @click="removeImage(idx)">×</button>
+                    </div>
+                    <el-button type="primary" @click="handleSubmitReview" :loading="submitting" class="submit-btn">
+                      {{ replyingTo ? '发表回复' : '发表评论' }}
+                    </el-button>
+                  </div>
                 </el-form-item>
               </el-form>
             </div>
           </div>
 
+          <!-- 评论输入区回复提示 -->
+          <div v-if="replyingTo && authStore.isUserLoggedIn" class="reply-indicator">
+            <span>回复 @{{ replyingTo.user?.nickname || replyingTo.user_name }}</span>
+            <button class="cancel-reply-btn" @click="cancelReply">取消回复</button>
+          </div>
+
           <!-- 评论列表 -->
           <div class="review-list">
+            <!-- 顶级评论 -->
             <div v-for="review in reviews" :key="review.id" class="review-card">
               <div class="review-header">
                 <div class="reviewer-avatar">
@@ -317,12 +343,65 @@
                 <div class="reviewer-info">
                   <span class="reviewer-name">{{ review.user?.nickname || review.user_name }}</span>
                   <div class="review-meta">
-                    <span class="review-rating">⭐ {{ review.rating }}</span>
+                    <span v-if="review.rating" class="review-rating">⭐ {{ review.rating }}</span>
                     <span class="review-date">{{ formatDate(review.created_at) }}</span>
                   </div>
                 </div>
               </div>
               <p class="review-content">{{ review.content }}</p>
+              <!-- 评论图片 -->
+              <div v-if="review.images && review.images.length > 0" class="review-images">
+                <div v-for="(img, imgIdx) in review.images" :key="imgIdx" class="review-image-wrapper">
+                  <img :src="processImageUrl(img)" class="review-image" />
+                </div>
+              </div>
+              <!-- 评论操作 -->
+              <div class="review-actions">
+                <button
+                  class="like-review-btn"
+                  :class="{ liked: review._liked }"
+                  @click="handleLikeReview(review)"
+                >
+                  <span class="like-icon">{{ review._liked ? '❤️' : '🤍' }}</span>
+                  <span class="like-count">{{ review.like_count || 0 }}</span>
+                </button>
+                <button class="reply-btn" @click="startReply(review)" v-if="authStore.isUserLoggedIn">
+                  💬 回复
+                </button>
+              </div>
+
+              <!-- 子评论（回复） -->
+              <div v-if="review.replies && review.replies.length > 0" class="replies-container">
+                <div v-for="reply in review.replies" :key="reply.id" class="reply-card">
+                  <div class="review-header">
+                    <div class="reviewer-avatar reply-avatar">
+                      <span class="avatar-text">{{ (reply.user?.nickname || reply.user_name).charAt(0).toUpperCase() }}</span>
+                    </div>
+                    <div class="reviewer-info">
+                      <span class="reviewer-name">{{ reply.user?.nickname || reply.user_name }}</span>
+                      <div class="review-meta">
+                        <span class="review-date">{{ formatDate(reply.created_at) }}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <p class="review-content">{{ reply.content }}</p>
+                  <div v-if="reply.images && reply.images.length > 0" class="review-images">
+                    <div v-for="(img, imgIdx) in reply.images" :key="imgIdx" class="review-image-wrapper">
+                      <img :src="processImageUrl(img)" class="review-image" />
+                    </div>
+                  </div>
+                  <div class="review-actions">
+                    <button
+                      class="like-review-btn"
+                      :class="{ liked: reply._liked }"
+                      @click="handleLikeReview(reply)"
+                    >
+                      <span class="like-icon">{{ reply._liked ? '❤️' : '🤍' }}</span>
+                      <span class="like-count">{{ reply.like_count || 0 }}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
             
             <div v-if="reviews.length === 0" class="empty-state">
@@ -354,7 +433,7 @@ const props = defineProps({
   }
 })
 
-defineEmits(['back'])
+const emit = defineEmits(['back'])
 
 const authStore = useAuthStore()
 const reviews = ref([])
@@ -367,6 +446,9 @@ const videoDebugInfo = ref('')
 const isPlaying = ref(false)
 const showAuthModal = ref(false)
 const showShareMenu = ref(false)
+const replyingTo = ref(null)
+const uploadedImages = ref([])
+const uploadingImage = ref(false)
 
 const reviewForm = reactive({
   rating: 5,
@@ -489,7 +571,14 @@ const loadReviews = async () => {
   try {
     const res = await reviewAPI.getByDestination(props.destination.id)
     if (res.code === 200) {
-      reviews.value = res.data
+      reviews.value = res.data.map(review => ({
+        ...review,
+        _liked: false,
+        replies: (review.replies || []).map(reply => ({
+          ...reply,
+          _liked: false
+        }))
+      }))
     }
   } catch (error) {
     console.error('加载评论失败:', error)
@@ -549,24 +638,99 @@ const handleSubmitReview = async () => {
     if (valid) {
       submitting.value = true
       try {
-        const res = await userAPI.addReview({
-          destinationId: props.destination.id,
-          content: reviewForm.content,
-          rating: reviewForm.rating
-        })
-        if (res.code === 200) {
-          ElMessage.success('评论发表成功')
-          reviewForm.content = ''
-          reviewForm.rating = 5
-          loadReviews()
+        if (replyingTo.value) {
+          const res = await reviewAPI.reply(replyingTo.value.id, {
+            content: reviewForm.content,
+            images: uploadedImages.value
+          })
+          if (res.code === 200) {
+            ElMessage.success('回复成功')
+            const parentReview = reviews.value.find(r => r.id === replyingTo.value.id)
+            if (parentReview) {
+              if (!parentReview.replies) parentReview.replies = []
+              parentReview.replies.push({ ...res.data, _liked: false })
+            }
+            cancelReply()
+          }
+        } else {
+          const res = await userAPI.addReview({
+            destinationId: props.destination.id,
+            content: reviewForm.content,
+            rating: reviewForm.rating,
+            images: uploadedImages.value
+          })
+          if (res.code === 200) {
+            ElMessage.success('评论发表成功')
+            loadReviews()
+          }
         }
+        reviewForm.content = ''
+        reviewForm.rating = 5
+        uploadedImages.value = []
       } catch (error) {
-        ElMessage.error('评论发表失败')
+        ElMessage.error(replyingTo.value ? '回复失败' : '评论发表失败')
       } finally {
         submitting.value = false
       }
     }
   })
+}
+
+const startReply = (review) => {
+  replyingTo.value = review
+  reviewForm.content = ''
+  reviewForm.rating = 5
+  uploadedImages.value = []
+}
+
+const cancelReply = () => {
+  replyingTo.value = null
+  reviewForm.content = ''
+  reviewForm.rating = 5
+  uploadedImages.value = []
+}
+
+const handleLikeReview = async (review) => {
+  if (!authStore.isUserLoggedIn) {
+    showAuthModal.value = true
+    return
+  }
+  try {
+    const res = await reviewAPI.like(review.id)
+    if (res.code === 200) {
+      review._liked = res.data.liked
+      review.like_count = res.data.like_count
+    }
+  } catch (error) {
+    console.error('点赞操作失败:', error)
+  }
+}
+
+const handleUploadImage = async (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+  if (file.size > 3 * 1024 * 1024) {
+    ElMessage.error('图片大小不能超过 3MB')
+    return
+  }
+  uploadingImage.value = true
+  try {
+    const formData = new FormData()
+    formData.append('image', file)
+    const res = await reviewAPI.uploadImage(formData)
+    if (res.code === 200) {
+      uploadedImages.value.push(res.data.url)
+    }
+  } catch (error) {
+    ElMessage.error('图片上传失败')
+  } finally {
+    uploadingImage.value = false
+    event.target.value = ''
+  }
+}
+
+const removeImage = (index) => {
+  uploadedImages.value.splice(index, 1)
 }
 
 const onAuthSuccess = () => {
@@ -615,6 +779,53 @@ const shareToQQ = () => {
   const qqUrl = `https://connect.qq.com/widget/shareqq/index.html?url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}`
   window.open(qqUrl, '_blank', 'width=600,height=400')
   showShareMenu.value = false
+}
+
+const handleAddToCompare = () => {
+  if (!props.destination) return
+
+  const MAX_COMPARE = 4
+  let compareList = []
+
+  try {
+    const saved = sessionStorage.getItem('compareDestinations')
+    if (saved) {
+      compareList = JSON.parse(saved)
+    }
+  } catch (e) {
+    compareList = []
+  }
+
+  const exists = compareList.some(item => item.id === props.destination.id)
+  if (exists) {
+    ElMessage.info('该景点已在对比列表中')
+    return
+  }
+
+  if (compareList.length >= MAX_COMPARE) {
+    ElMessage.warning(`最多只能对比 ${MAX_COMPARE} 个景点`)
+    return
+  }
+
+  compareList.push({
+    id: props.destination.id,
+    name: props.destination.name,
+    image: props.destination.image,
+    rating: props.destination.rating,
+    location: props.destination.location,
+    ticketPrice: props.destination.ticketPrice,
+    bestTime: props.destination.bestTime,
+    duration: props.destination.duration,
+    openingHours: props.destination.openingHours,
+    transport: props.destination.transport,
+    Tags: props.destination.Tags
+  })
+
+  sessionStorage.setItem('compareDestinations', JSON.stringify(compareList))
+  ElMessage.success(`已将「${props.destination.name}」加入对比列表`)
+
+  // 返回列表页
+  emit('back')
 }
 
 watch(showVideo, (newVal) => {
@@ -1296,6 +1507,211 @@ onMounted(() => {
   line-height: 1.6;
   color: #444;
   margin: 0;
+}
+
+/* 评论操作 */
+.review-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+  align-items: center;
+}
+
+.like-review-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: 1px solid #e5e5e5;
+  border-radius: 16px;
+  padding: 4px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #888;
+  transition: all 0.3s ease;
+}
+
+.like-review-btn:hover {
+  border-color: #ff6b6b;
+  color: #ff6b6b;
+}
+
+.like-review-btn.liked {
+  border-color: #ff6b6b;
+  color: #ff6b6b;
+  background: #fff5f5;
+}
+
+.like-icon {
+  font-size: 14px;
+}
+
+.like-count {
+  font-size: 12px;
+}
+
+.reply-btn {
+  background: none;
+  border: 1px solid #e5e5e5;
+  border-radius: 16px;
+  padding: 4px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #888;
+  transition: all 0.3s ease;
+}
+
+.reply-btn:hover {
+  border-color: #111;
+  color: #111;
+}
+
+/* 回复指示 */
+.reply-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f0f7ff;
+  border-left: 3px solid #409eff;
+  padding: 8px 12px;
+  border-radius: 4px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: #333;
+}
+
+.cancel-reply-btn {
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 6px;
+}
+
+.cancel-reply-btn:hover {
+  color: #ff6b6b;
+}
+
+/* 子评论区域 */
+.replies-container {
+  margin-top: 12px;
+  padding-left: 40px;
+  border-left: 2px solid #e5e5e5;
+}
+
+.reply-card {
+  background: #f5f5f5;
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 8px;
+}
+
+.reply-card:last-child {
+  margin-bottom: 0;
+}
+
+.reply-avatar {
+  width: 30px;
+  height: 30px;
+}
+
+.reply-avatar .avatar-text {
+  font-size: 12px;
+}
+
+/* 评论图片 */
+.review-images {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.review-image-wrapper {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #eee;
+}
+
+.review-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 表单操作行 */
+.form-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* 图片上传按钮 */
+.upload-image-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 14px;
+  background: #f0f0f0;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #555;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.upload-image-btn:hover {
+  background: #e8e8e8;
+  border-color: #ccc;
+}
+
+.upload-input-hidden {
+  display: none;
+}
+
+/* 图片预览 */
+.upload-preview-item {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #e5e5e5;
+  flex-shrink: 0;
+}
+
+.upload-preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.remove-preview-btn {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  border: none;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.remove-preview-btn:hover {
+  background: rgba(255, 0, 0, 0.8);
 }
 
 /* 空状态 */

@@ -109,6 +109,15 @@
                     </div>
                     <p class="card-desc">{{ dest.description ? dest.description.substring(0, 60) + '...' : '暂无描述' }}</p>
                     <div class="card-footer">
+                      <button
+                        class="compare-check-btn"
+                        :class="{ active: isInCompare(dest.id) }"
+                        @click="toggleCompare(dest, $event)"
+                        :title="isInCompare(dest.id) ? '取消对比' : '加入对比'"
+                      >
+                        <span class="compare-check-icon">{{ isInCompare(dest.id) ? '☑' : '☐' }}</span>
+                        <span>对比</span>
+                      </button>
                       <button class="detail-btn">查看详情 →</button>
                     </div>
                   </div>
@@ -168,6 +177,13 @@
       </main>
       <MobileBottomNav />
     </div>
+
+    <!-- 对比组件 -->
+    <DestinationCompare
+      :compareList="compareList"
+      @remove="handleCompareRemove"
+      @clear="handleCompareClear"
+    />
   </div>
 </template>
 
@@ -175,10 +191,12 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import Sidebar from '../components/Sidebar.vue'
 import DestinationDetail from '../components/DestinationDetail.vue'
+import DestinationCompare from '../components/DestinationCompare.vue'
 import Navbar from '../components/Navbar.vue'
 import MobileBottomNav from '../components/MobileBottomNav.vue'
 import { destinationAPI } from '../api/destinations'
 import { useRoute, useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 
 const showFilterDropdown = ref(false)
 const showCountryDropdown = ref(false)
@@ -276,6 +294,74 @@ const currentDestination = ref(null)
 const destinations = ref([])
 const currentPage = ref(1)
 const pageSize = ref(12)
+
+// 对比功能
+const MAX_COMPARE = 4
+const compareList = ref([])
+
+// 从 sessionStorage 恢复对比列表
+const initCompareList = () => {
+  try {
+    const saved = sessionStorage.getItem('compareDestinations')
+    if (saved) {
+      compareList.value = JSON.parse(saved)
+    }
+  } catch (e) {
+    compareList.value = []
+  }
+}
+
+// 同步对比列表到 sessionStorage
+const syncCompareList = () => {
+  sessionStorage.setItem('compareDestinations', JSON.stringify(compareList.value))
+}
+
+// 切换景点对比选中状态
+const toggleCompare = (dest, event) => {
+  if (event) {
+    event.stopPropagation()
+  }
+  const index = compareList.value.findIndex(item => item.id === dest.id)
+  if (index > -1) {
+    compareList.value.splice(index, 1)
+  } else {
+    if (compareList.value.length >= MAX_COMPARE) {
+      ElMessage.warning(`最多只能对比 ${MAX_COMPARE} 个景点`)
+      return
+    }
+    compareList.value.push({
+      id: dest.id,
+      name: dest.name,
+      image: dest.image,
+      rating: dest.rating,
+      location: dest.location,
+      ticketPrice: dest.ticketPrice,
+      bestTime: dest.bestTime,
+      duration: dest.duration,
+      openingHours: dest.openingHours,
+      transport: dest.transport,
+      Tags: dest.Tags
+    })
+  }
+  syncCompareList()
+}
+
+// 检查景点是否在对比列表中
+const isInCompare = (destId) => {
+  return compareList.value.some(item => item.id === destId)
+}
+
+// 从对比列表移除景点
+const handleCompareRemove = (id) => {
+  compareList.value = compareList.value.filter(item => item.id !== id)
+  syncCompareList()
+}
+
+// 清空对比列表
+const handleCompareClear = () => {
+  compareList.value = []
+  syncCompareList()
+}
 
 const countryOptions = computed(() => {
   const countries = new Set()
@@ -381,6 +467,8 @@ const viewDestination = async (id) => {
 const goBack = () => {
   currentDestination.value = null
   router.push('/destinations')
+  // 从详情页返回时，重新同步对比列表（可能从详情页添加了新景点）
+  initCompareList()
 }
 
 const processCardImageUrl = (url) => {
@@ -410,6 +498,7 @@ const loadDestinations = async () => {
 }
 
 onMounted(() => {
+  initCompareList()
   loadDestinations()
   document.addEventListener('click', handleClickOutside)
 })
@@ -713,7 +802,38 @@ onUnmounted(() => {
 
 .card-footer {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.compare-check-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #f5f5f5;
+  color: #666;
+  border: 1px solid #e5e5e5;
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.compare-check-btn:hover {
+  background: #eee;
+  color: #333;
+  border-color: #ccc;
+}
+
+.compare-check-btn.active {
+  background: #111;
+  color: white;
+  border-color: #111;
+}
+
+.compare-check-icon {
+  font-size: 14px;
 }
 
 .detail-btn {
@@ -957,6 +1077,16 @@ onUnmounted(() => {
 
   .destinations-page .main-content {
     padding-bottom: 60px;
+  }
+
+  .compare-check-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+    gap: 2px;
+  }
+
+  .compare-check-icon {
+    font-size: 12px;
   }
 }
 </style>

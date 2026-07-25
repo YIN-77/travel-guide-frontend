@@ -71,5 +71,59 @@ export const userAPI = {
   getAllLikes(targetType) {
     const params = targetType ? { targetType } : {}
     return request.get('/interactions/likes', { params })
+  },
+
+  // ===== 关注/粉丝系统 =====
+
+  // 关注用户
+  follow(userId) {
+    return request.post('/users/follow', { userId })
+  },
+
+  // 取消关注
+  unfollow(userId) {
+    return request.delete(`/users/follow/${userId}`)
+  },
+
+  // 获取粉丝列表
+  getFollowers(userId, page = 1, limit = 20) {
+    return request.get(`/users/${userId}/followers`, { params: { page, limit } })
+  },
+
+  // 获取关注列表
+  getFollowing(userId, page = 1, limit = 20) {
+    return request.get(`/users/${userId}/following`, { params: { page, limit } })
+  },
+
+  // 获取关注统计
+  getFollowStats(userId) {
+    return request.get(`/users/${userId}/follow-stats`)
+  },
+
+  // ===== 收藏夹分组 =====
+
+  // 获取收藏夹分组列表
+  getFavoriteGroups() {
+    return request.get('/users/favorites/groups')
+  },
+
+  // 创建收藏夹
+  createFavoriteGroup(name) {
+    return request.post('/users/favorites/groups', { name })
+  },
+
+  // 更新收藏夹
+  updateFavoriteGroup(id, name) {
+    return request.put(`/users/favorites/groups/${id}`, { name })
+  },
+
+  // 删除收藏夹
+  deleteFavoriteGroup(id) {
+    return request.delete(`/users/favorites/groups/${id}`)
+  },
+
+  // 移动收藏到指定分组
+  moveFavoriteToGroup(favoriteId, groupId) {
+    return request.post('/users/favorites/move', { favoriteId, groupId })
   }
 }

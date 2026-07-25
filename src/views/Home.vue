@@ -20,8 +20,8 @@
                 <div v-for="dest in searchedDestinations" :key="dest.id" class="search-card destination-card" @click="viewDestination(dest.id)">
                   <img :src="processCardImageUrl(dest.image)" :alt="dest.name" class="search-card-img" />
                   <div class="search-card-info">
-                    <h4>{{ dest.name }}</h4>
-                    <p class="search-card-location">📍 {{ dest.location }}</p>
+                    <h4 v-html="highlightKeyword(dest.name)"></h4>
+                    <p class="search-card-location" v-html="highlightKeyword('📍 ' + dest.location)"></p>
                     <div class="search-card-rating">⭐ {{ dest.rating }}</div>
                   </div>
                 </div>
@@ -35,8 +35,8 @@
                 <div v-for="item in searchedItineraries" :key="item.id" class="search-card" @click="viewItinerary(item.id)">
                   <img :src="processCardImageUrl(item.coverImage || item.cover_image || item.image)" :alt="item.title" class="search-card-img" />
                   <div class="search-card-info">
-                    <h4>{{ item.title }}</h4>
-                    <p class="search-card-desc">{{ (item.description || '').substring(0, 40) }}...</p>
+                    <h4 v-html="highlightKeyword(item.title)"></h4>
+                    <p class="search-card-desc" v-html="highlightKeyword((item.description || '').substring(0, 40) + '...')"></p>
                     <div class="search-card-meta">
                       <span>👤 {{ item.author_name || item.author || '匿名' }}</span>
                       <span>👍 {{ item.likes || 0 }}</span>
@@ -53,8 +53,8 @@
                 <div v-for="item in searchedGuides" :key="item.id" class="search-card" @click="viewGuide(item.id)">
                   <img :src="processCardImageUrl(item.cover_image || item.coverImage || item.image)" :alt="item.title" class="search-card-img" />
                   <div class="search-card-info">
-                    <h4>{{ item.title }}</h4>
-                    <p class="search-card-desc">{{ (item.description || '').substring(0, 40) }}...</p>
+                    <h4 v-html="highlightKeyword(item.title)"></h4>
+                    <p class="search-card-desc" v-html="highlightKeyword((item.description || '').substring(0, 40) + '...')"></p>
                     <div class="search-card-meta">
                       <span>👤 {{ item.author_name || item.author || '匿名' }}</span>
                       <span>👍 {{ item.likes || 0 }}</span>
@@ -71,8 +71,8 @@
                 <div v-for="item in searchedNews" :key="item.id" class="search-card news-card" @click="viewNews(item.id)">
                   <img :src="processCardImageUrl(item.cover_image || item.coverImage || item.image)" :alt="item.title" class="search-card-img" />
                   <div class="search-card-info">
-                    <h4>{{ item.title }}</h4>
-                    <p class="search-card-desc">{{ (item.description || '').substring(0, 40) }}...</p>
+                    <h4 v-html="highlightKeyword(item.title)"></h4>
+                    <p class="search-card-desc" v-html="highlightKeyword((item.description || '').substring(0, 40) + '...')"></p>
                     <div class="search-card-meta">
                       <span>{{ formatDate(item.created_at || item.date) }}</span>
                       <span>{{ item.category }}</span>
@@ -404,6 +404,28 @@ const processCardImageUrl = (url) => {
     return url
   }
   return `http://localhost:3000${url.startsWith('/') ? '' : '/'}${url}`
+}
+
+// XSS 安全转义
+const escapeHtml = (text) => {
+  if (!text) return ''
+  const div = document.createElement('div')
+  div.textContent = text
+  return div.innerHTML
+}
+
+// 搜索关键词高亮（先转义再高亮）
+const highlightKeyword = (text) => {
+  if (!searchQuery.value || !text) return escapeHtml(text)
+  const escapedText = escapeHtml(text)
+  const escapedKeyword = escapeHtml(searchQuery.value)
+  // 构建不区分大小写的正则替换
+  try {
+    const regex = new RegExp(`(${escapedKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi')
+    return escapedText.replace(regex, '<mark>$1</mark>')
+  } catch (e) {
+    return escapedText
+  }
 }
 
 const loadDestinations = async () => {
@@ -997,6 +1019,16 @@ onMounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* 搜索关键词高亮 */
+.search-card-info mark,
+.search-card-desc mark,
+.search-card-location mark {
+  background: #fef08a;
+  color: #1e293b;
+  padding: 1px 2px;
+  border-radius: 2px;
 }
 
 .search-card-meta {

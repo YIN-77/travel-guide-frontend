@@ -19,23 +19,66 @@
               v-model="searchQuery"
               @input="handleSearchInput"
               @keyup.enter="handleSearch"
-              @focus="showSuggestions = true"
+              @focus="showSearchPanel = true"
               @blur="hideSuggestions"
             >
             <button class="search-btn" @click="handleSearch">搜索</button>
           </div>
           
-          <div v-if="showSuggestions && searchSuggestions.length > 0" class="search-suggestions">
-            <div
-              v-for="dest in searchSuggestions"
-              :key="dest.id"
-              class="suggestion-item"
-              @mousedown.prevent="selectSuggestion(dest)"
-            >
-              <img :src="processImageUrl(dest.image)" :alt="dest.name" class="suggestion-img" />
-              <div class="suggestion-info">
-                <div class="suggestion-name">{{ dest.name }}</div>
-                <div class="suggestion-location">{{ dest.location }}</div>
+          <!-- 搜索下拉面板 -->
+          <div v-if="showSearchPanel" class="search-panel">
+            <!-- 搜索建议（有输入时显示） -->
+            <div v-if="searchQuery.trim() && searchSuggestions.length > 0" class="search-suggestions">
+              <div
+                v-for="dest in searchSuggestions"
+                :key="dest.id"
+                class="suggestion-item"
+                @mousedown.prevent="selectSuggestion(dest)"
+              >
+                <img :src="processImageUrl(dest.image)" :alt="dest.name" class="suggestion-img" />
+                <div class="suggestion-info">
+                  <div class="suggestion-name">{{ dest.name }}</div>
+                  <div class="suggestion-location">{{ dest.location }}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 搜索历史 + 热门搜索（输入为空时显示） -->
+            <div v-if="!searchQuery.trim()" class="search-panel-content">
+              <!-- 搜索历史 -->
+              <div v-if="searchHistory.length > 0" class="search-section-block">
+                <div class="search-section-header">
+                  <span class="search-section-title">🔍 搜索历史</span>
+                  <button class="clear-all-btn" @mousedown.prevent="clearSearchHistory">清除全部</button>
+                </div>
+                <div class="history-list">
+                  <div
+                    v-for="(item, index) in searchHistory"
+                    :key="index"
+                    class="history-item"
+                    @mousedown.prevent="searchFromHistory(item)"
+                  >
+                    <span class="history-text">{{ item }}</span>
+                    <button class="history-delete-btn" @mousedown.prevent.stop="removeSearchHistory(index)">×</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 热门搜索 -->
+              <div v-if="hotSearches.length > 0" class="search-section-block">
+                <div class="search-section-header">
+                  <span class="search-section-title">🔥 热门搜索</span>
+                </div>
+                <div class="hot-tags">
+                  <span
+                    v-for="item in hotSearches"
+                    :key="item.id"
+                    class="hot-tag"
+                    @mousedown.prevent="searchFromHot(item.keyword)"
+                  >
+                    {{ item.keyword }}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -63,6 +106,7 @@
               <span v-else>{{ (authStore.user?.nickname || authStore.user?.username || 'U').charAt(0).toUpperCase() }}</span>
             </div>
             <span class="user-name">{{ authStore.user?.nickname || authStore.user?.username }}</span>
+            <span class="level-badge-mini" :class="'level-' + (authStore.user?.level || 1)" :title="levelName">{{ levelIcon }}</span>
           </router-link>
           <button class="logout-btn" @click="handleLogout">退出</button>
         </div>
@@ -97,12 +141,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import AuthModal from './AuthModal.vue'
 import { useRouter } from 'vue-router'
 import { notificationAPI } from '../api/notifications'
 import { destinationAPI } from '../api/destinations'
+import { searchAPI } from '../api/search'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -113,6 +158,22 @@ const showSuggestions = ref(false)
 const searchSuggestions = ref([])
 const allDestinations = ref([])
 const mobileMenuOpen = ref(false)
+
+const levelNames = ['', '初级旅行者', '背包客', '旅行达人', '资深玩家', '环球旅行家', '至尊旅行家']
+const levelIcons = ['', '🌱', '🎒', '🌟', '💎', '🌍', '👑']
+
+const levelName = computed(() => {
+  const level = authStore.user?.level || 1
+  return levelNames[level] || '初级旅行者'
+})
+
+const levelIcon = computed(() => {
+  const level = authStore.user?.level || 1
+  return levelIcons[level] || '🌱'
+})
+const searchHistory = ref([])
+const hotSearches = ref([])
+const showSearchPanel = ref(false)
 
 const mobileMenus = [
   { id: 1, name: '首页', icon: '🏠', path: '/' },
@@ -162,13 +223,28 @@ const handleLogout = () => {
 }
 
 const handleSearch = () => {
-  showSuggestions.value = false
+  showSearchPanel.value = false
   if (searchQuery.value.trim()) {
-    router.push({ path: '/', query: { search: searchQuery.value.trim() } })
+    const keyword = searchQuery.value.trim()
+    saveSearchHistory(keyword)
+    router.push({ path: '/', query: { search: keyword } })
   } else {
-    // 搜索框为空，直接返回主页
     router.push('/')
   }
+}
+
+const searchFromHistory = (keyword) => {
+  searchQuery.value = keyword
+  showSearchPanel.value = false
+  saveSearchHistory(keyword)
+  router.push({ path: '/', query: { search: keyword } })
+}
+
+const searchFromHot = (keyword) => {
+  searchQuery.value = keyword
+  showSearchPanel.value = false
+  saveSearchHistory(keyword)
+  router.push({ path: '/', query: { search: keyword } })
 }
 
 const handleSearchInput = () => {
@@ -178,21 +254,21 @@ const handleSearchInput = () => {
       dest.name.toLowerCase().includes(query) ||
       dest.location.toLowerCase().includes(query)
     ).slice(0, 6)
-    showSuggestions.value = true
+    showSearchPanel.value = true
   } else {
     searchSuggestions.value = []
-    showSuggestions.value = false
+    showSearchPanel.value = true
   }
 }
 
 const hideSuggestions = () => {
   setTimeout(() => {
-    showSuggestions.value = false
+    showSearchPanel.value = false
   }, 200)
 }
 
 const selectSuggestion = (dest) => {
-  showSuggestions.value = false
+  showSearchPanel.value = false
   searchQuery.value = ''
   searchSuggestions.value = []
   router.push({ path: '/', query: { id: dest.id } })
@@ -217,6 +293,64 @@ const loadDestinations = async () => {
   }
 }
 
+// 搜索历史管理
+const loadSearchHistory = () => {
+  try {
+    const history = localStorage.getItem('search_history')
+    if (history) {
+      searchHistory.value = JSON.parse(history).slice(0, 5)
+    }
+  } catch (e) {
+    console.error('加载搜索历史失败:', e)
+    searchHistory.value = []
+  }
+}
+
+const saveSearchHistory = (keyword) => {
+  try {
+    const history = JSON.parse(localStorage.getItem('search_history') || '[]')
+    // 去重：如果已存在，先移除
+    const filtered = history.filter(item => item !== keyword)
+    // 添加到开头
+    filtered.unshift(keyword)
+    // 最多存 10 条
+    const saved = filtered.slice(0, 10)
+    localStorage.setItem('search_history', JSON.stringify(saved))
+    // 更新显示（仅显示最近 5 条）
+    searchHistory.value = saved.slice(0, 5)
+  } catch (e) {
+    console.error('保存搜索历史失败:', e)
+  }
+}
+
+const removeSearchHistory = (index) => {
+  try {
+    const history = JSON.parse(localStorage.getItem('search_history') || '[]')
+    history.splice(index, 1)
+    localStorage.setItem('search_history', JSON.stringify(history))
+    searchHistory.value = history.slice(0, 5)
+  } catch (e) {
+    console.error('删除搜索历史失败:', e)
+  }
+}
+
+const clearSearchHistory = () => {
+  localStorage.removeItem('search_history')
+  searchHistory.value = []
+}
+
+// 加载热门搜索
+const loadHotSearches = async () => {
+  try {
+    const res = await searchAPI.getHotSearches()
+    if (res.code === 200) {
+      hotSearches.value = res.data || []
+    }
+  } catch (error) {
+    console.error('加载热门搜索失败:', error)
+  }
+}
+
 const onAuthSuccess = () => {
   // 登录或注册成功后，获取未读消息
   fetchUnreadCount()
@@ -235,6 +369,8 @@ watch(() => authStore.isUserLoggedIn, () => {
 onMounted(() => {
   fetchUnreadCount()
   loadDestinations()
+  loadSearchHistory()
+  loadHotSearches()
   // 每30秒刷新一次未读消息
   setInterval(fetchUnreadCount, 30000)
 })
@@ -339,15 +475,6 @@ onMounted(() => {
 }
 
 .search-suggestions {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
-  right: 0;
-  background: white;
-  border: 2px solid #e0e0e0;
-  border-radius: 12px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
   max-height: 400px;
   overflow-y: auto;
 }
@@ -399,6 +526,131 @@ onMounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* 搜索下拉面板 */
+.search-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.search-panel-content {
+  padding: 16px;
+}
+
+.search-section-block {
+  margin-bottom: 16px;
+}
+
+.search-section-block:last-child {
+  margin-bottom: 0;
+}
+
+.search-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.search-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+}
+
+.clear-all-btn {
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.clear-all-btn:hover {
+  color: #ef4444;
+  background: #fef2f2;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.history-item:hover {
+  background: #f8f9fa;
+}
+
+.history-text {
+  font-size: 14px;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-delete-btn {
+  background: none;
+  border: none;
+  color: #ccc;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.history-delete-btn:hover {
+  color: #ef4444;
+  background: #fef2f2;
+}
+
+.hot-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hot-tag {
+  display: inline-block;
+  padding: 6px 14px;
+  background: #f8f9fa;
+  border: 1px solid #e8e8e8;
+  border-radius: 20px;
+  font-size: 13px;
+  color: #555;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.hot-tag:hover {
+  background: #eef2ff;
+  border-color: #667eea;
+  color: #667eea;
 }
 
 .home-link {
@@ -510,6 +762,24 @@ onMounted(() => {
   font-weight: 600;
   color: #333;
 }
+
+.level-badge-mini {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.level-badge-mini.level-1 { background: #e2e8f0; }
+.level-badge-mini.level-2 { background: #bfdbfe; }
+.level-badge-mini.level-3 { background: #c7d2fe; }
+.level-badge-mini.level-4 { background: #e0e7ff; box-shadow: 0 0 6px rgba(99, 102, 241, 0.3); }
+.level-badge-mini.level-5 { background: linear-gradient(135deg, #818cf8, #6366f1); }
+.level-badge-mini.level-6 { background: linear-gradient(135deg, #fbbf24, #f59e0b); box-shadow: 0 0 8px rgba(251, 191, 36, 0.4); }
 
 .logout-btn {
   padding: 8px 16px;
@@ -748,6 +1018,9 @@ onMounted(() => {
 
   .search-suggestions {
     max-height: 280px;
+  }
+
+  .search-panel {
     top: calc(100% + 4px);
     border-radius: 10px;
     border-width: 1px;
