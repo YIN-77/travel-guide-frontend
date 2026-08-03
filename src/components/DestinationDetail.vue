@@ -527,10 +527,26 @@ const processVideoUrl = (url) => {
   return `http://localhost:3000${url.startsWith('/') ? '' : '/'}${url}`
 }
 
+// 规范化 images 字段：可能是数组，也可能是 JSON 字符串
+const normalizeImages = (images) => {
+  if (!images) return []
+  if (Array.isArray(images)) return images
+  if (typeof images === 'string') {
+    try {
+      const parsed = JSON.parse(images)
+      return Array.isArray(parsed) ? parsed : []
+    } catch {
+      return []
+    }
+  }
+  return []
+}
+
 const displayImages = computed(() => {
   if (!props.destination) return []
-  if (props.destination.images && props.destination.images.length > 0) {
-    return props.destination.images.map(img => processImageUrl(img))
+  const images = normalizeImages(props.destination.images)
+  if (images.length > 0) {
+    return images.map(img => processImageUrl(img))
   }
   if (props.destination.image) {
     return [processImageUrl(props.destination.image)]

@@ -143,13 +143,13 @@
               <div v-for="item in hotItineraries" :key="item.id" class="content-card" @click="viewItinerary(item.id)">
                 <div class="card-cover">
                   <img :src="processCardImageUrl(item.coverImage || item.cover_image || item.image)" :alt="item.title">
-                  <div class="card-tag">{{ item.days || 1 }}天</div>
+                  <div class="card-tag">{{ item.daysCount || item.days?.length || 1 }}天</div>
                 </div>
                 <div class="card-info">
                   <h3>{{ item.title }}</h3>
                   <p class="card-desc">{{ item.description }}</p>
                   <div class="card-meta">
-                    <span class="meta-item">👤 {{ item.author_name || item.author || '匿名' }}</span>
+                    <span class="meta-item">👤 {{ item.author_name || item.User?.nickname || item.User?.username || '匿名' }}</span>
                     <span class="meta-item">👍 {{ item.likes || 0 }}</span>
                     <span class="meta-item">👁️ {{ item.views || 0 }}</span>
                   </div>
@@ -173,7 +173,7 @@
                   <h3>{{ item.title }}</h3>
                   <p class="card-desc">{{ item.description }}</p>
                   <div class="card-meta">
-                    <span class="meta-item">👤 {{ item.author_name || item.author || '匿名' }}</span>
+                    <span class="meta-item">👤 {{ item.is_official ? '官方平台' : (item.author_name || item.author || '匿名') }}</span>
                     <span class="meta-item">👍 {{ item.likes || 0 }}</span>
                     <span class="meta-item">💬 {{ item.comments || 0 }}</span>
                   </div>
@@ -292,30 +292,48 @@ const noSearchResults = computed(() => {
     searchedNews.value.length === 0
 })
 
-// 轮播图数据（保持静态）
-const carouselItems = ref([
+// 轮播图数据：保留原有文案，图片从数据库热门内容取
+const defaultCarouselData = [
   {
     title: '探索世界之美',
     description: '发现全球最美景点，开启您的旅行梦想',
-    image: 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=1200&h=400&fit=crop',
     action: '立即探索',
-    type: 'destinations'
+    type: 'destinations',
+    imageKey: 'dest'
   },
   {
     title: '热门行程规划',
     description: '智能规划您的完美旅程，省时又省心',
-    image: 'https://images.unsplash.com/photo-1488646953003-0b223ec08baf?w=1200&h=400&fit=crop',
     action: '开始规划',
-    type: 'itinerary'
+    type: 'itinerary',
+    imageKey: 'itin'
   },
   {
     title: '精选旅游攻略',
     description: '来自真实旅行者的经验分享',
-    image: 'https://images.unsplash.com/photo-1501785888041-af3ef281b399?w=1200&h=400&fit=crop',
     action: '查看攻略',
-    type: 'guide'
+    type: 'guide',
+    imageKey: 'guide'
   }
-])
+]
+
+const carouselItems = computed(() => {
+  const topDest = hotDestinations.value[0]
+  const topItin = hotItineraries.value[0]
+  const topGuide = hotGuides.value[0]
+
+  return defaultCarouselData.map(item => {
+    let image = ''
+    if (item.imageKey === 'dest' && topDest) {
+      image = processCardImageUrl(topDest.image)
+    } else if (item.imageKey === 'itin' && topItin) {
+      image = processCardImageUrl(topItin.coverImage || topItin.cover_image || topItin.image)
+    } else if (item.imageKey === 'guide' && topGuide) {
+      image = processCardImageUrl(topGuide.cover_image || topGuide.coverImage || topGuide.image)
+    }
+    return { ...item, image }
+  })
+})
 
 // 热门景点计算属性
 const hotDestinations = computed(() => {

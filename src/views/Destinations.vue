@@ -458,9 +458,17 @@ const handleSearch = () => {
 }
 
 const viewDestination = async (id) => {
-  const res = await destinationAPI.getById(id)
-  if (res.code === 200) {
-    currentDestination.value = res.data
+  try {
+    const res = await destinationAPI.getById(id)
+    if (res.code === 200) {
+      currentDestination.value = res.data
+    } else {
+      console.error('获取景点详情失败:', res.message || '未知错误')
+      ElMessage.error(res.message || '获取景点详情失败')
+    }
+  } catch (error) {
+    console.error('获取景点详情失败:', error)
+    ElMessage.error('获取景点详情失败，请检查网络连接')
   }
 }
 
